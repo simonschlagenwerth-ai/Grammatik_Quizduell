@@ -1,133 +1,160 @@
-// server.js – GrammatikDuell Lobby-Server (HTTP-Polling, kein WebSocket)
-// Funktioniert zuverlaessig auf Render Free Tier
-// Aufruf: node server.js
+/* ============================================================
+   GrammatikDuell – Lobby-Server
+   Stellt die API bereit, die index.html erwartet:
+   /api/create, /api/join, /api/poll, /api/progress, /api/done, /api/leave
+   ============================================================ */
 
 const express = require('express');
-const path    = require('path');
-const app     = express();
-const PORT    = process.env.PORT || 3000;
+const path = require('path');
 
+const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// ── Lobby-Verwaltung ──────────────────────────────────────────────────────────
-// Map<code, { players:[{id,name,score,progress,done}], diff, created, events:[] }>
-const lobbies = new Map();
+/* Statische Dateien (index.html, css, js, bilder) aus dem
+   gleichen Ordner ausliefern, in dem server.js liegt. */
+app.use(express.static(__dirname));
+
+/* ---- Lobby-Speicher (im Arbeitsspeicher, reicht für dieses Projekt) ---- */
+const lobbies = {}; // code -> lobby
 
 function makeCode() {
   let code;
-  do { code = String(Math.floor(1000 + Math.random() * 9000)); }
-  while (lobbies.has(code));
+  do {
+    code = String(Math.floor(1000 + Math.random() * 9000));
+  } while (lobbies[code]);
   return code;
 }
 
 function makeId() {
-  return Math.random().toString(36).slice(2, 10);
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-// Lobbys aelter als 2h bereinigen
+function pushEvent(lobby, targetId, type, data) {
+  lobby.events.push(Object.assign({ target: targetId, type }, data));
+}
+
+function otherPlayerId(lobby, playerId) {
+  return lobby.order.find(id => id !== playerId);
+}
+
+/* Alte/verlassene Lobbys nach 30 Minuten aufräumen */
 setInterval(() => {
-  const now = Date.now();
-  for (const [code, l] of lobbies)
-    if (now - l.created > 7_200_000) lobbies.delete(code);
-}, 300_000);
+  const cutoff = Date.now() - 30 * 60 * 1000;
+  for (const code in lobbies) {
+    if (lobbies[code].createdAt < cutoff) delete lobbies[code];
+  }
+}, 5 * 60 * 1000);
 
-// ── API-Endpunkte ─────────────────────────────────────────────────────────────
-
-// Neue Lobby erstellen
+/* ---- Lobby erstellen ---- */
 app.post('/api/create', (req, res) => {
-  const { name, diff } = req.body || {};
-  const code    = makeCode();
+  const name = (req.body.name || 'Spieler 1').slice(0, 16);
+  const diff = req.body.diff || 'mittel';
+  const code = makeCode();
   const playerId = makeId();
-  lobbies.set(code, {
-    players: [{ id: playerId, name: String(name || 'Spieler 1').slice(0,16), score: 0, progress: 0, done: false }],
-    diff:    ['leicht','mittel','schwer'].includes(diff) ? diff : 'mittel',
-    created: Date.now(),
-    events:  [{ type: 'created', code }]
-  });
-  res.json({ ok: true, code, playerId, diff: lobbies.get(code).diff });
+
+  lobbies[code] = {
+    code,
+    diff,
+    order: [playerId],
+    players: { [playerId]: { name, progress: 0, score: 0, done: false } },
+    events: [],
+    createdAt: Date.now()
+  };
+
+  res.json({ ok: true, code, playerId, diff });
 });
 
-// Lobby beitreten
+/* ---- Lobby beitreten ---- */
 app.post('/api/join', (req, res) => {
-  const { code, name } = req.body || {};
-  const lobby = lobbies.get(String(code || '').trim());
-  if (!lobby)                      return res.json({ ok: false, why: 'notfound' });
-  if (lobby.players.length >= 2)   return res.json({ ok: false, why: 'full' });
-  const playerId = makeId();
-  lobby.players.push({ id: playerId, name: String(name || 'Spieler 2').slice(0,16), score: 0, progress: 0, done: false });
-  lobby.events.push({ type: 'opp_joined', opp: lobby.players[1].name });
-  res.json({ ok: true, code, playerId, diff: lobby.diff, oppName: lobby.players[0].name });
-});
+  const code = String(req.body.code || '');
+  const name = (req.body.name || 'Spieler 2').slice(0, 16);
+  const lobby = lobbies[code];
 
-// Fortschritt melden
-app.post('/api/progress', (req, res) => {
-  const { code, playerId, progress, score } = req.body || {};
-  const lobby = lobbies.get(code);
-  if (!lobby) return res.json({ ok: false });
-  const p = lobby.players.find(p => p.id === playerId);
-  if (!p)   return res.json({ ok: false });
-  p.score    = Number(score)    || 0;
-  p.progress = Number(progress) || 0;
-  lobby.events.push({ type: 'opp_progress', progress: p.progress, score: p.score, from: playerId });
-  res.json({ ok: true });
-});
-
-// Fertig melden
-app.post('/api/done', (req, res) => {
-  const { code, playerId, score } = req.body || {};
-  const lobby = lobbies.get(code);
-  if (!lobby) return res.json({ ok: false });
-  const p = lobby.players.find(p => p.id === playerId);
-  if (!p)   return res.json({ ok: false });
-  p.score    = Number(score) || 0;
-  p.progress = 10;
-  p.done     = true;
-  lobby.events.push({ type: 'opp_done', score: p.score, from: playerId });
-  // Beide fertig?
-  if (lobby.players.length === 2 && lobby.players.every(p => p.done)) {
-    lobby.events.push({
-      type:    'result',
-      players: lobby.players.map(p => ({ name: p.name, score: p.score }))
-    });
-  }
-  res.json({ ok: true });
-});
-
-// Polling: neue Events seit lastSeen abrufen (Client pollt alle 1.5s)
-app.get('/api/poll', (req, res) => {
-  const { code, playerId, since } = req.query;
-  const lobby = lobbies.get(code);
   if (!lobby) return res.json({ ok: false, why: 'notfound' });
-  const sinceIdx = parseInt(since, 10) || 0;
-  // Nur Events zurueckgeben, die NICHT von diesem Spieler stammen
-  const events = lobby.events
-    .slice(sinceIdx)
-    .filter(e => !e.from || e.from !== playerId);
+  if (lobby.order.length >= 2) return res.json({ ok: false, why: 'full' });
+
+  const playerId = makeId();
+  const hostId = lobby.order[0];
+  lobby.order.push(playerId);
+  lobby.players[playerId] = { name, progress: 0, score: 0, done: false };
+
+  pushEvent(lobby, hostId, 'opp_joined', { opp: name });
+
   res.json({
-    ok:      true,
-    total:   lobby.events.length,
-    events,
-    players: lobby.players.map(p => ({ name: p.name, score: p.score, progress: p.progress, done: p.done }))
+    ok: true,
+    code,
+    playerId,
+    diff: lobby.diff,
+    oppName: lobby.players[hostId].name
   });
 });
 
-// Lobby verlassen
-app.post('/api/leave', (req, res) => {
-  const { code, playerId } = req.body || {};
-  const lobby = lobbies.get(code);
-  if (lobby) {
-    const p = lobby.players.find(p => p.id === playerId);
-    if (p) {
-      lobby.events.push({ type: 'opp_left', name: p.name });
-      lobby.players = lobby.players.filter(p => p.id !== playerId);
-      if (lobby.players.length === 0) lobbies.delete(code);
-    }
-  }
+/* ---- Fortschritt nach jeder Frage ---- */
+app.post('/api/progress', (req, res) => {
+  const { code, playerId, progress, score } = req.body;
+  const lobby = lobbies[code];
+  if (!lobby || !lobby.players[playerId]) return res.json({ ok: false });
+
+  lobby.players[playerId].progress = progress;
+  lobby.players[playerId].score = score;
+
+  const oppId = otherPlayerId(lobby, playerId);
+  if (oppId) pushEvent(lobby, oppId, 'opp_progress', { progress, score });
+
   res.json({ ok: true });
 });
 
-// Health-Check
-app.get('/health', (_, res) => res.json({ ok: true, lobbies: lobbies.size }));
+/* ---- Spiel fertig ---- */
+app.post('/api/done', (req, res) => {
+  const { code, playerId, score } = req.body;
+  const lobby = lobbies[code];
+  if (!lobby || !lobby.players[playerId]) return res.json({ ok: false });
 
-app.listen(PORT, () => console.log('GrammatikDuell Server Port ' + PORT));
+  lobby.players[playerId].done = true;
+  lobby.players[playerId].score = score;
+
+  const oppId = otherPlayerId(lobby, playerId);
+  if (oppId) pushEvent(lobby, oppId, 'opp_done', { score });
+
+  const allDone = lobby.order.every(id => lobby.players[id].done);
+  if (allDone) {
+    const results = lobby.order.map(id => ({
+      name: lobby.players[id].name,
+      score: lobby.players[id].score
+    }));
+    lobby.order.forEach(id => pushEvent(lobby, id, 'result', { players: results }));
+  }
+
+  res.json({ ok: true });
+});
+
+/* ---- Polling: neue Ereignisse abholen ---- */
+app.get('/api/poll', (req, res) => {
+  const { code, playerId } = req.query;
+  const since = parseInt(req.query.since, 10) || 0;
+  const lobby = lobbies[code];
+  if (!lobby) return res.json({ ok: false });
+
+  const fresh = lobby.events.slice(since).filter(ev => ev.target === playerId);
+  res.json({ ok: true, total: lobby.events.length, events: fresh });
+});
+
+/* ---- Lobby verlassen ---- */
+app.post('/api/leave', (req, res) => {
+  const { code, playerId } = req.body;
+  const lobby = lobbies[code];
+  if (!lobby) return res.json({ ok: true });
+
+  const name = lobby.players[playerId] ? lobby.players[playerId].name : 'Spieler';
+  const oppId = otherPlayerId(lobby, playerId);
+  if (oppId) pushEvent(lobby, oppId, 'opp_left', { name });
+
+  delete lobby.players[playerId];
+  lobby.order = lobby.order.filter(id => id !== playerId);
+  if (lobby.order.length === 0) delete lobbies[code];
+
+  res.json({ ok: true });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log('Server läuft auf Port ' + PORT));
