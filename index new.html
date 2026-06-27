@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GrammatikDuell</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:#0f1923;color:#f0f4f8;min-height:100vh}
+#app{min-height:100vh;width:100%;padding:1rem}
+.screen{display:none;flex-direction:column;align-items:center;gap:1rem;min-height:100vh;justify-content:center;padding:1rem}
+.screen.active{display:flex}
+.logo{text-align:center;padding:.5rem 0}
+.logo h1{font-family:'Fredoka One',sans-serif;font-size:clamp(2rem,7vw,3.2rem);color:#f0f4f8}
+.logo h1 span{color:#ffe66d}
+.logo p{font-size:13px;color:#8899aa;margin-top:4px}
+.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:680px}
+.mode-card{background:#1a2535;border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:1.5rem 1rem;cursor:pointer;text-align:center;transition:border-color .15s,transform .15s;color:#f0f4f8}
+.mode-card:hover{border-color:#ffe66d;transform:translateY(-3px)}
+.mode-card i{font-size:2.2rem;color:#ffe66d;display:block;margin-bottom:8px}
+.mode-card strong{display:block;font-size:15px;font-weight:700;color:#f0f4f8}
+.mode-card small{font-size:12px;color:#8899aa;line-height:1.4;margin-top:4px;display:block}
+.diff-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+.diff-row label{font-size:13px;color:#8899aa;font-weight:700}
+.diff-btn{font-size:12px;font-weight:700;padding:5px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#8899aa;cursor:pointer;transition:all .15s}
+.diff-btn.active,.diff-btn:hover{border-color:#ffe66d;color:#ffe66d;background:rgba(255,230,109,0.08)}
+.names-box{background:#1a2535;border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:2rem;width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px}
+.names-box h2{font-family:'Fredoka One',sans-serif;font-size:1.6rem;text-align:center;color:#ffe66d}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;font-weight:800;letter-spacing:.04em}
+.c1{color:#ff6b6b}.c2{color:#4ecdc4}
+.field input{background:#223045;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 14px;color:#f0f4f8;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;outline:none;transition:border-color .15s;width:100%}
+.field input:focus{border-color:#ffe66d}
+.field input::placeholder{color:#445566;font-weight:400}
+.btn-primary{background:#ffe66d;color:#1a1a2e;border:none;border-radius:999px;padding:12px 24px;font-family:'Fredoka One',sans-serif;font-size:1rem;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 16px rgba(255,230,109,.25);width:100%;text-align:center}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(255,230,109,.35)}
+.btn-ghost{background:none;border:none;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:#8899aa;cursor:pointer;padding:6px;transition:color .15s}
+.btn-ghost:hover{color:#f0f4f8}
+.scoreboard{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;width:100%;max-width:680px;background:#1a2535;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:12px 16px}
+.pscore{display:flex;flex-direction:column;gap:3px}
+.pscore.right{text-align:right;align-items:flex-end}
+.pscore-name{font-size:11px;font-weight:800;color:#8899aa;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pscore-num{font-family:'Fredoka One',sans-serif;font-size:2rem;line-height:1}
+.n1{color:#ff6b6b}.n2{color:#4ecdc4}
+.bar-wrap{width:100%;height:3px;background:#223045;border-radius:999px;overflow:hidden;max-width:110px}
+.bar{height:100%;border-radius:999px;width:0;transition:width .4s}
+.b1{background:#ff6b6b}.b2{background:#4ecdc4}
+.rinfo{text-align:center}
+.rinfo-label{font-size:10px;color:#8899aa;text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+.rinfo-num{font-family:'Fredoka One',sans-serif;font-size:1.3rem;color:#ffe66d}
+.cat-badge{display:inline-block;font-size:10px;font-weight:800;padding:2px 10px;border-radius:999px;background:rgba(162,155,254,.15);color:#a29bfe;margin-top:3px}
+.timer-wrap{position:relative;width:72px;height:72px;flex-shrink:0;align-self:center}
+.timer-wrap svg{width:72px;height:72px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:#223045;stroke-width:5}
+.ring-fg{fill:none;stroke:#ffe66d;stroke-width:5;stroke-linecap:round;stroke-dasharray:195;stroke-dashoffset:0;transition:stroke-dashoffset .9s linear,stroke .3s}
+.ring-fg.urgent{stroke:#ff7675}
+.timer-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',sans-serif;font-size:1.5rem;color:#f0f4f8}
+.turn-banner{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#ffe66d;padding:5px 16px;background:rgba(255,230,109,.08);border-radius:999px;border:1px solid rgba(255,230,109,.25)}
+.qcard{width:100%;max-width:680px;background:#1a2535;border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:1.4rem 1.6rem}
+.qcat{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#a29bfe;margin-bottom:8px}
+.qtext{font-size:clamp(1rem,2.5vw,1.15rem);font-weight:700;color:#f0f4f8;line-height:1.55}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:680px}
+.ans-btn{background:#1a2535;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;font-family:'Nunito',sans-serif;font-size:clamp(.82rem,2vw,.96rem);font-weight:700;color:#f0f4f8;cursor:pointer;text-align:left;display:flex;align-items:flex-start;gap:10px;min-height:56px;line-height:1.4;transition:border-color .12s,background .12s,transform .1s}
+.ans-btn:hover:not(:disabled){border-color:#ffe66d;background:rgba(255,230,109,.05);transform:translateY(-1px)}
+.ans-letter{font-size:11px;font-weight:800;width:24px;height:24px;min-width:24px;border-radius:50%;background:#223045;display:flex;align-items:center;justify-content:center;color:#8899aa;margin-top:1px;transition:background .12s,color .12s}
+.ans-btn.correct{border-color:#55efc4;background:rgba(85,239,196,.1)}
+.ans-btn.correct .ans-letter{background:#55efc4;color:#0f1923}
+.ans-btn.wrong{border-color:#ff7675;background:rgba(255,118,117,.1)}
+.ans-btn.wrong .ans-letter{background:#ff7675;color:#0f1923}
+.ans-btn.reveal{border-color:#55efc4;background:rgba(85,239,196,.06);opacity:.75}
+.ans-btn.reveal .ans-letter{background:#55efc4;color:#0f1923}
+.ans-btn:disabled{cursor:not-allowed}
+/* ---- RESULT OVERLAY ---- */
+.result-overlay{position:fixed;inset:0;background:rgba(15,25,35,.95);backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:50;padding:2rem;animation:fadeIn .25s ease}
+.result-overlay.hidden{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.result-icon{font-size:3.5rem;animation:iconPop .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes iconPop{from{transform:scale(0)}to{transform:scale(1)}}
+.result-text{font-family:'Fredoka One',sans-serif;font-size:1.8rem;color:#f0f4f8;text-align:center}
+.result-text.correct{color:#55efc4}
+.result-text.wrong{color:#ff7675}
+.result-text.timeout{color:#ffe66d}
+/* Explain box: shown for BOTH correct and wrong answers */
+.result-explain-box{background:#1a2535;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:1.2rem 1.4rem;max-width:480px;width:100%;display:flex;flex-direction:column;gap:10px}
+.result-correct-answer{font-size:13px;font-weight:800;color:#55efc4;letter-spacing:.04em;text-transform:uppercase}
+.result-explanation{font-size:14px;color:#c8d8e8;line-height:1.65}
+.result-tip{font-size:12px;color:#8899aa;line-height:1.5;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07)}
+.result-overlay .btn-primary{max-width:240px}
+/* END */
+.end-box{background:#1a2535;border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:2rem;width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.end-trophy{font-size:4.5rem;animation:trophyPop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes trophyPop{from{transform:scale(0) rotate(-15deg)}to{transform:scale(1) rotate(0)}}
+.end-title{font-family:'Fredoka One',sans-serif;font-size:2rem;color:#ffe66d}
+.end-winner{font-size:1rem;color:#8899aa}
+.end-scores{width:100%;border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden}
+.erow{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px}
+.erow:last-child{border-bottom:none}
+.erow-name{font-weight:800;color:#f0f4f8}
+.erow-pts{font-family:'Fredoka One',sans-serif;font-size:1.1rem;color:#ffe66d}
+.end-btns{display:flex;flex-direction:column;gap:8px;width:100%}
+@media(max-width:480px){.mode-grid{grid-template-columns:1fr}.answers{grid-template-columns:1fr}.scoreboard{padding:8px 10px}.pscore-name{max-width:75px}}
+
+/* ── Online Lobby ── */
+.lbox{background:#1a2535;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:2rem;width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.lbox h2{font-family:'Fredoka One',sans-serif;font-size:1.6rem;color:#ffe66d}
+.l2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
+.lcode{font-family:'Fredoka One',sans-serif;font-size:3rem;letter-spacing:.2em;color:#ffe66d;background:#223045;border:2px dashed rgba(255,230,109,.3);border-radius:14px;padding:.6rem 1.5rem;width:100%;text-align:center;cursor:pointer}
+.lhint{font-size:12px;color:#8899aa;line-height:1.6}
+.lcode-in{font-family:'Fredoka One',sans-serif;font-size:2.4rem;letter-spacing:.2em;text-align:center;background:#223045;border:2px solid rgba(255,255,255,.12);border-radius:12px;padding:.4em;color:#f0f4f8;outline:none;width:100%;transition:border-color .15s}
+.lcode-in:focus{border-color:#ffe66d}
+.lstatus{display:flex;align-items:center;gap:10px;background:#223045;border-radius:12px;padding:.8em 1em;width:100%}
+.ldot{width:10px;height:10px;border-radius:50%;background:#ffe66d;flex-shrink:0;animation:dp 1.2s ease-in-out infinite}
+.ldot.ok{background:#55efc4;animation:none}
+@keyframes dp{0%,100%{opacity:1}50%{opacity:.25}}
+.lstxt{font-size:13px;font-weight:700;color:#c8d8e8;text-align:left;flex:1}
+.lerr{font-size:13px;color:#ff7675;background:rgba(255,118,117,.1);border:1px solid rgba(255,118,117,.3);border-radius:10px;padding:.6em 1em;width:100%;display:none}
+.lerr.on{display:block}
+.lspin{width:36px;height:36px;border:3px solid #223045;border-top-color:#ffe66d;border-radius:50%;animation:sp 1s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+.orow{display:flex;align-items:center;gap:8px;width:100%;font-size:12px;color:#8899aa}
+.owrap{flex:1;height:5px;background:#223045;border-radius:999px;overflow:hidden}
+.obar{height:100%;background:#4ecdc4;width:0;border-radius:999px;transition:width .4s}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- START -->
+<div id="s-start" class="screen active">
+  <div class="logo">
+    <h1>Grammatik<span>Duell</span></h1>
+    <p>Rechtschreibung &amp; Grammatik &bull; Klasse 5&ndash;9</p>
+  </div>
+  <div class="mode-grid">
+    <button class="mode-card" onclick="pickMode('ki')"><i class="ti ti-robot"></i><strong>Gegen KI</strong><small>Spiel alleine gegen den Computer</small></button>
+    <button class="mode-card" onclick="pickMode('2p')"><i class="ti ti-users"></i><strong>Zwei Spieler</strong><small>Spiel gegen einen Freund</small></button>
+    <button class="mode-card" onclick="pickMode('online')"><i class="ti ti-wifi"></i><strong>Online-Lobby</strong><small>Spiel auf einem anderen Geraet</small></button>
+  </div>
+  <div class="diff-row">
+    <label>Schwierigkeit:</label>
+    <button class="diff-btn" onclick="setDiff('leicht',this)">Leicht</button>
+    <button class="diff-btn active" onclick="setDiff('mittel',this)">Mittel</button>
+    <button class="diff-btn" onclick="setDiff('schwer',this)">Schwer</button>
+  </div>
+</div>
+
+<!-- NAMEN -->
+<div id="s-names" class="screen">
+  <div class="names-box">
+    <h2 id="names-title">Namen eingeben</h2>
+    <div class="field"><label class="c1"><i class="ti ti-square-rounded-filled"></i> Spieler 1</label><input type="text" id="n1" placeholder="Dein Name..." maxlength="16"/></div>
+    <div class="field" id="n2-wrap"><label class="c2"><i class="ti ti-square-rounded-filled"></i> Spieler 2</label><input type="text" id="n2" placeholder="Name Spieler 2..." maxlength="16"/></div>
+    <button class="btn-primary" onclick="startGame()">Los geht's!</button>
+    <button class="btn-ghost" onclick="show('s-start')"><i class="ti ti-arrow-left"></i> Zuruck</button>
+  </div>
+</div>
+
+<!-- SPIEL -->
+<div id="s-game" class="screen">
+  <div class="scoreboard">
+    <div class="pscore"><div class="pscore-name" id="sn1">Spieler 1</div><div class="pscore-num n1" id="sc1">0</div><div class="bar-wrap"><div class="bar b1" id="bar1"></div></div></div>
+    <div class="rinfo"><div class="rinfo-label">Runde</div><div class="rinfo-num" id="rdisplay">1 / 10</div><div class="cat-badge" id="cbadge">Grammatik</div></div>
+    <div class="pscore right"><div class="pscore-name" id="sn2">KI</div><div class="pscore-num n2" id="sc2">0</div><div class="bar-wrap"><div class="bar b2" id="bar2"></div></div></div>
+  </div>
+  <div class="orow" id="ol-orow" style="display:none"><span id="ol-olbl">Gegner: 0/10</span><div class="owrap"><div class="obar" id="ol-obar"></div></div></div>
+  <div class="timer-wrap">
+    <svg viewBox="0 0 72 72"><circle class="ring-bg" cx="36" cy="36" r="31"/><circle class="ring-fg" id="rfg" cx="36" cy="36" r="31"/></svg>
+    <div class="timer-num" id="tnum">15</div>
+  </div>
+  <div class="turn-banner" id="tbanner">Spieler 1 ist dran</div>
+  <div class="qcard"><div class="qcat" id="qcat">Grammatik</div><div class="qtext" id="qtext">Lade...</div></div>
+  <div class="answers" id="ans-grid"></div>
+</div>
+
+<!-- ERGEBNIS OVERLAY -->
+<div class="result-overlay hidden" id="result-box">
+  <div class="result-icon" id="rico"></div>
+  <div class="result-text" id="rtxt"></div>
+  <div class="result-explain-box">
+    <div class="result-correct-answer" id="rcorrect"></div>
+    <div class="result-explanation" id="rexpl"></div>
+    <div class="result-tip" id="rtip"></div>
+  </div>
+  <button class="btn-primary" onclick="nextRound()">Weiter <i class="ti ti-arrow-right"></i></button>
+</div>
+
+<!-- END -->
+<div id="s-end" class="screen">
+  <div class="end-box">
+    <div class="end-trophy" id="etrophy"></div>
+    <div class="end-title" id="etitle"></div>
+    <div class="end-winner" id="ewinner"></div>
+    <div class="end-scores">
+      <div class="erow"><span class="erow-name" id="en1"></span><span class="erow-pts" id="ep1"></span></div>
+      <div class="erow"><span class="erow-name" id="en2"></span><span class="erow-pts" id="ep2"></span></div>
+    </div>
+    <div class="end-btns">
+      <button class="btn-primary" onclick="endNextStep()">Weiter &#x2192;</button>
+    </div>
+  </div>
+</div>
+
+<!-- Zweiter Schritt: Hauptmenü-Optionen -->
+<div id="s-after-end" class="screen">
+  <div class="end-box">
+    <div style="font-size:2.5rem">&#x1F3AE;</div>
+    <div class="end-title">Was moechtest du tun?</div>
+    <div class="end-btns">
+      <button class="btn-primary" onclick="startGame()">Nochmal spielen</button>
+      <button class="btn-ghost" onclick="show('s-start')">Zum Hauptmenu</button>
+    </div>
+  </div>
+</div>
+
+<div id="s-ol-choice" class="screen"><div class="lbox">
+  <h2>Online-Lobby</h2>
+  <div class="l2col">
+    <button class="mode-card" onclick="olShowCreate()"><i class="ti ti-plus"></i><strong>Erstellen</strong><small>Neue Lobby starten</small></button>
+    <button class="mode-card" onclick="olShowJoin()"><i class="ti ti-login"></i><strong>Beitreten</strong><small>Code eingeben</small></button>
+  </div>
+  <button class="btn-ghost" onclick="show('s-start')"><i class="ti ti-arrow-left"></i> Zurueck</button>
+</div></div>
+
+<div id="s-ol-create" class="screen"><div class="lbox">
+  <h2>Lobby erstellen</h2>
+  <div class="field" style="width:100%"><label class="c1"><i class="ti ti-square-rounded-filled"></i> Dein Name</label><input type="text" id="ol-name-c" placeholder="Dein Name..." maxlength="16"/></div>
+  <div class="lerr" id="ol-err-c"></div>
+  <button class="btn-primary" id="ol-btn-create" onclick="olDoCreate()">Erstellen</button>
+  <button class="btn-ghost" onclick="show('s-ol-choice')"><i class="ti ti-arrow-left"></i> Zurueck</button>
+</div></div>
+
+<div id="s-ol-wait" class="screen"><div class="lbox">
+  <h2>Warte auf Mitspieler</h2>
+  <p class="lhint">Gib diesen Code an deinen Mitspieler weiter:</p>
+  <div class="lcode" id="ol-code-shown" title="Tippen zum Kopieren">----</div>
+  <p class="lhint">Tippe auf den Code um ihn zu kopieren.</p>
+  <div class="lstatus"><div class="lspin"></div><span class="lstxt" id="ol-wait-txt">Warte auf zweiten Spieler...</span></div>
+  <button class="btn-ghost" onclick="olLeave()"><i class="ti ti-arrow-left"></i> Verlassen</button>
+</div></div>
+
+<div id="s-ol-join" class="screen"><div class="lbox">
+  <h2>Lobby beitreten</h2>
+  <div class="field" style="width:100%"><label class="c2"><i class="ti ti-key"></i> Lobby-Code (4 Ziffern)</label><input class="lcode-in" id="ol-code-in" type="text" inputmode="numeric" placeholder="0000" maxlength="4"/></div>
+  <div class="field" style="width:100%"><label class="c1"><i class="ti ti-square-rounded-filled"></i> Dein Name</label><input type="text" id="ol-name-j" placeholder="Dein Name..." maxlength="16"/></div>
+  <div class="lerr" id="ol-err-j"></div>
+  <button class="btn-primary" id="ol-btn-join" onclick="olDoJoin()">Beitreten</button>
+  <button class="btn-ghost" onclick="show('s-ol-choice')"><i class="ti ti-arrow-left"></i> Zurueck</button>
+</div></div>
+
+<div id="s-ol-ready" class="screen"><div class="lbox">
+  <h2>Verbunden!</h2>
+  <div class="lstatus"><div class="ldot ok"></div><span class="lstxt">Du spielst gegen <strong id="ol-opp-name" style="color:#4ecdc4"></strong></span></div>
+  <button class="btn-primary" onclick="olStartGame()">Spiel starten!</button>
+  <button class="btn-ghost" onclick="olLeave()"><i class="ti ti-arrow-left"></i> Verlassen</button>
+</div></div>
+
+<div id="s-ol-done" class="screen"><div class="lbox">
+  <h2>Fertig!</h2>
+  <p class="lhint" id="ol-done-score"></p>
+  <div class="lstatus"><div class="lspin"></div><span class="lstxt">Warte auf deinen Gegner...</span></div>
+  <button class="btn-ghost" onclick="olLeave()">Abbrechen</button>
+</div></div>
+</div>
+<script>
+// Each question has:
+// cat: category, f: question, a: answers[], r: correct index,
+// e: explanation (shown for ALL answers), tip: memory trick (optional)
+var QUESTIONS={
+leicht:[
+// RECHTSCHREIBUNG
+{cat:"Rechtschreibung",f:"Welche Schreibweise ist richtig?",a:["das Fahrrad","das Fahrad","das Fahr-Rad","das Fahr Rad"],r:0,e:"'Fahrrad' ist ein zusammengesetztes Nomen aus 'fahren' und 'Rad'. Zusammengesetzte Nomen schreibt man im Deutschen immer als ein Wort zusammen.",tip:"Trick: Wenn zwei Nomen zusammen eine neue Sache beschreiben, werden sie zusammengeschrieben."},
+{cat:"Rechtschreibung",f:"Welches Wort wird mit 'ss' geschrieben?",a:["essen","Strasse","Gruesse","Fuesse"],r:0,e:"Nach einem kurzen Vokal schreibt man 'ss'. In 'essen' ist das 'e' kurz (man spricht es schnell). Bei 'Strasse', 'Gruesse' und 'Fuesse' ist der Vokal lang.",tip:"Merke: Kurzer Vokal + ss / Langer Vokal + ss (frueher: ss)"},
+{cat:"Rechtschreibung",f:"Wie schreibt man 'Geburts___' richtig?",a:["Geburtstag","Geburstag","Geburtztag","Geburts-Tag"],r:0,e:"'Geburtstag' setzt sich aus 'Geburt' und 'Tag' zusammen. Bei Zusammensetzungen bleiben die Schreibweisen beider Woerter erhalten – also 'Geburts-' (mit t und s) und 'tag'.",tip:"Zerlege das Wort: Ge-burts-tag. Das 't' und 's' kommen beide vom Wortstamm 'Geburt'."},
+{cat:"Rechtschreibung",f:"Welche Schreibweise ist falsch?",a:["wißen","wissen","Wissen","du weisst"],r:0,e:"'wissen' schreibt man mit 'ss', weil das 'i' kurz gesprochen wird. 'wissen' ist die richtige Schreibweise. 'du weisst' hingegen hat ein langes 'ei', daher 'ss'.",tip:"Teste den Vokal: Sprich das Wort langsam. Kurzes i in 'wissen' = ss"},
+{cat:"Rechtschreibung",f:"Welche Schreibweise ist korrekt?",a:["Mittag","Mitag","Mitt-tag","Mittagg"],r:0,e:"'Mittag' kommt von 'Mitte' + 'Tag'. Wenn zwei gleiche Konsonanten aufeinandertreffen, bleiben beide: Mitt-tag = Mittag (drei t waeren zu viel, zwei bleiben).",tip:"Merk-Satz: In der Mitte des Tages – 'Mittag'"},
+{cat:"Rechtschreibung",f:"Welches Wort ist richtig geschrieben?",a:["Freundschaft","Freuntschaft","Freundchaft","Freuhndschaft"],r:0,e:"'Freundschaft' = Freund + schaft. Das 'd' in 'Freund' bleibt erhalten, auch wenn man es am Wortende fast nicht hoert. Das nennt man 'Auslautverhärtung' – aber beim Schreiben behaelt man den Stamm.",tip:"Verlängerungsprobe: 'Freunde' → man hoert das 'd' deutlich → also 'Freund'"},
+{cat:"Rechtschreibung",f:"Wie schreibt man den Plural von 'das Haus'?",a:["die Haeuser","die Hauses","die Haus","die Haeusen"],r:0,e:"Der Plural von 'Haus' lautet 'Haeuser'. Das 'au' wird zu 'aeu' (Umlaut), und es kommt die Endung '-er' dazu. Merke: Viele Woerter bilden den Plural mit Umlaut.",tip:"Haeuser, Maeuser, Haehn-er – der Umlaut zeigt den Plural an!"},
+{cat:"Rechtschreibung",f:"Welches Wort ist falsch geschrieben?",a:["Wiese","Strasse","Schloss","Fluss"],r:1,e:"'Strasse' wird mit Doppel-s geschrieben, weil das 'a' kurz ist. Das 'ss' nach kurzem Vokal ist die Regel seit der Rechtschreibreform 1996.",tip:"Nach KURZEM Vokal: 'ss' (Strasse, Schloss, Fluss, Gasse)"},
+{cat:"Rechtschreibung",f:"Welche Schreibweise ist korrekt?",a:["Herbstferien","Herbsferien","Herbst-ferien","Herpstferien"],r:0,e:"'Herbstferien' = 'Herbst' + 'Ferien'. Zusammengesetzte Nomen schreibt man zusammen. Das 'st' aus Herbst und das 'f' aus Ferien treffen aufeinander.",tip:"Grundregel: Nomen + Nomen = zusammen schreiben"},
+{cat:"Rechtschreibung",f:"Welches Wort schreibt man gross?",a:["das Lachen","lachen","lachend","herzlich lachen"],r:0,e:"Verben werden normalerweise kleingeschrieben. Wenn man sie aber als Nomen verwendet (Nominalisierung), schreibt man sie gross: 'das Lachen'. Das Wort bekommt einen Artikel.",tip:"Erkennungszeichen: Hat das Wort einen Artikel (der, die, das)? Dann gross schreiben!"},
+// WORTARTEN
+{cat:"Wortarten",f:"Was ist ein Nomen?",a:["Ein Namenwort wie 'Haus' oder 'Freude'","Ein Taetigkeitswort wie 'laufen'","Ein Eigenschaftswort wie 'gross'","Ein Verbindungswort wie 'und'"],r:0,e:"Nomen (auch Substantive genannt) sind Namenwörter. Sie benennen Personen, Tiere, Dinge oder Gefuehle. Im Deutschen erkennt man sie daran, dass sie gross geschrieben werden.",tip:"Merkhilfe: Nomen = Namenwörter. Alle Nomen haben einen Artikel: der, die oder das."},
+{cat:"Wortarten",f:"Welches Wort ist ein Verb?",a:["tanzen","Tanz","tanzend","Tanzschule"],r:0,e:"Verben sind Taetigkeitswörter – sie sagen uns, was jemand tut, denkt oder fühlt. 'tanzen' ist ein Verb. 'Tanz' ist ein Nomen, 'tanzend' ein Adjektiv, 'Tanzschule' wieder ein Nomen.",tip:"Fragetest: Kann man 'ich ...' davorsagen? 'ich tanze' ✓ → Verb!"},
+{cat:"Wortarten",f:"Was ist ein Adjektiv?",a:["Ein Eigenschaftswort wie 'schnell'","Ein Namenwort wie 'Schnelligkeit'","Ein Taetigkeitswort wie 'beschleunigen'","Ein Artikel wie 'der'"],r:0,e:"Adjektive beschreiben Eigenschaften von Personen oder Dingen. Sie antworten auf die Frage 'Wie ist etwas?'. Beispiele: gross, klein, schoen, schnell, laut.",tip:"Fragetest fuer Adjektive: 'Wie ist der Hund?' – 'Der Hund ist schnell.' → 'schnell' ist das Adjektiv."},
+{cat:"Wortarten",f:"Welches Wort ist ein Artikel?",a:["die","schoen","laufen","Hund"],r:0,e:"Artikel sind Begleitwörter des Nomens. Die bestimmten Artikel sind: der (maennlich), die (weiblich), das (saechlich). Sie zeigen auch den Fall (Nominativ, Genitiv, Dativ, Akkusativ) an.",tip:"Die 3 bestimmten Artikel: DER Hund, DIE Katze, DAS Pferd"},
+{cat:"Wortarten",f:"Welches Wort ist ein Pronomen?",a:["er","und","blau","Tisch"],r:0,e:"Pronomen ersetzen Nomen, damit man nicht immer denselben Namen wiederholen muss. 'er' ersetzt z.B. den Namen eines Jungen. Weitere Pronomen: ich, du, wir, sie, es.",tip:"'er' statt 'Max', 'sie' statt 'Maria' – Pronomen ersetzen Namen!"},
+{cat:"Wortarten",f:"Was ist eine Konjunktion?",a:["Ein Bindewort wie 'und' oder 'weil'","Ein Eigenschaftswort","Ein Pronomen","Ein Artikel"],r:0,e:"Konjunktionen sind Bindewörter – sie verbinden Saetze oder Satzteile miteinander. Wichtige Konjunktionen: und, aber, oder, weil, dass, obwohl, wenn.",tip:"Konjunktionen kleben Saetze zusammen: 'Ich lerne, WEIL ich eine gute Note will.'"},
+{cat:"Wortarten",f:"Was ist ein Adverb?",a:["Ein Umstandswort wie 'gestern' oder 'dort'","Ein Eigenschaftswort","Ein Nomen","Ein Verb"],r:0,e:"Adverbien sind Umstandswörter. Sie beschreiben naehere Umstaende einer Handlung: Wo? (dort, hier), Wann? (gestern, morgen), Wie? (schnell, gerne), Warum? (deshalb).",tip:"Adverbien antworten auf: Wo? Wann? Wie? Warum?"},
+{cat:"Wortarten",f:"Was ist eine Praeposition?",a:["Ein Verhältniswort wie 'auf' oder 'in'","Ein Nomen","Ein Adjektiv","Ein Verb"],r:0,e:"Praepositionen zeigen raeumliche, zeitliche oder andere Beziehungen an. Sie stehen vor einem Nomen oder Pronomen und bestimmen dessen Fall. Beispiele: auf dem Tisch, in der Schule, vor dem Haus.",tip:"Praepositionen = Verhaeltniswörter. Merke: 'Auf, in, an, hinter, vor' – sie zeigen den Ort!"},
+// GRAMMATIK
+{cat:"Grammatik",f:"Welcher Artikel gehoert zu 'Sonne'?",a:["die","der","das","ein"],r:0,e:"'Sonne' ist ein weibliches Nomen (Femininum). Weibliche Nomen haben im Nominativ den Artikel 'die'. Leider gibt es keine feste Regel – das grammatische Geschlecht muss man lernen.",tip:"Merksatz: DIE Sonne scheint. Sonne = weiblich = die"},
+{cat:"Grammatik",f:"Was ist der Plural von 'das Kind'?",a:["die Kinder","die Kinds","die Kinde","die Kinden"],r:0,e:"Der Plural von 'Kind' ist 'Kinder'. Die Endung '-er' ist eine der haeufigsten Pluralendungen bei neutralen Nomen. Gleichzeitig kann ein Umlaut auftreten (z.B. Mutter → Muetter).",tip:"Pluralbildung: Mann → Maenner, Kind → Kinder, Bild → Bilder (mit -er)"},
+{cat:"Grammatik",f:"Welcher Artikel gehoert zu 'Baum'?",a:["der","die","das","dem"],r:0,e:"'Baum' ist ein maennliches Nomen (Maskulinum). Maennliche Nomen haben im Nominativ den Artikel 'der'.",tip:"Maennliche Artikel: DER Baum, DER Mann, DER Hund"},
+{cat:"Grammatik",f:"Was ist das Subjekt im Satz: 'Der Hund bellt laut.'?",a:["Der Hund","bellt","laut","Der"],r:0,e:"Das Subjekt ist die Person oder Sache, die im Satz 'handelt' – es antwortet auf die Frage 'Wer oder was tut etwas?'. In diesem Satz: 'Wer bellt?' → 'Der Hund'. Das Subjekt steht im Nominativ (1. Fall).",tip:"Subjekt finden: Frage 'Wer oder was ...?' an das Verb stellen."},
+{cat:"Grammatik",f:"Wie bildet man das Perfekt von 'spielen'?",a:["hat gespielt","ist gespielt","hatte gespielt","spielte"],r:0,e:"Das Perfekt bildet man mit dem Hilfsverb 'haben' oder 'sein' + Partizip II. 'spielen' bildet das Partizip II mit der Vorsilbe 'ge-' und der Endung '-t': gespielt. Mit 'haben': hat gespielt.",tip:"Partizip II Bildung: ge- + Stamm + -t. spielen → ge-spiel-t → gespielt"},
+{cat:"Grammatik",f:"Was ist der Infinitiv von 'du laeuftst'?",a:["laufen","gelaufen","laeuft","lauf"],r:0,e:"Der Infinitiv ist die Grundform des Verbs – so, wie man es im Woerterbuch findet. 'du laeuftst' ist die 2. Person Singular Praesens von 'laufen'. Die Grundform ist 'laufen'.",tip:"Grundform = Infinitiv. Endet immer auf '-en' oder '-n': laufen, rennen, sein."},
+{cat:"Grammatik",f:"In welchem Fall steht 'dem Lehrer' im Satz 'Ich gebe dem Lehrer das Buch'?",a:["Dativ (3. Fall)","Nominativ (1. Fall)","Genitiv (2. Fall)","Akkusativ (4. Fall)"],r:0,e:"'dem Lehrer' beantwortet die Frage 'Wem gebe ich das Buch?' – das ist der Dativ (3. Fall). Der bestimmte Artikel im Dativ lautet: dem (maennlich), der (weiblich), dem (saechlich).",tip:"Dativ-Frage: 'Wem?' DEM Lehrer (m), DER Mutter (f), DEM Kind (n)"},
+// ZEICHENSETZUNG
+{cat:"Zeichensetzung",f:"Welcher Satz ist richtig?",a:["Ich esse gern Pizza, aber keine Oliven.","Ich esse gern Pizza aber keine Oliven.","Ich esse, gern Pizza aber keine Oliven.","Ich esse gern, Pizza aber keine Oliven."],r:0,e:"Vor 'aber' steht immer ein Komma, wenn es zwei Hauptsaetze oder Satzglieder verbindet. 'aber' ist eine koordinierende Konjunktion – sie verbindet gleichrangige Teile.",tip:"Merke: Vor 'aber', 'doch', 'sondern' steht immer ein Komma!"},
+{cat:"Zeichensetzung",f:"Wann steht ein Komma vor 'und'?",a:["Wenn 'und' zwei vollstaendige Hauptsaetze verbindet","Immer vor 'und'","Niemals vor 'und'","Nur in Aufzaehlungen"],r:0,e:"Vor 'und' muss kein Komma stehen, ABER es kann eines stehen, wenn 'und' zwei vollstaendige Hauptsaetze verbindet. Ein Komma ist dann erlaubt, um Klarheit zu schaffen.",tip:"'und' in Aufzaehlungen: kein Komma. 'und' zwischen zwei Hauptsaetzen: Komma moeglich."},
+// SATZBAU
+{cat:"Satzbau",f:"Was ist ein Hauptsatz?",a:["Ein Satz, der alleine stehen kann","Ein Satz mit 'weil' oder 'dass'","Ein Satz ohne Verb","Ein Satz mit drei Verben"],r:0,e:"Ein Hauptsatz ist grammatisch vollstaendig und kann alleine stehen. Er hat ein Subjekt und ein Praedikat (Verb). Beispiel: 'Die Sonne scheint.' – dieser Satz macht alleine Sinn.",tip:"Hauptsatz = steht alleine. Nebensatz = braucht den Hauptsatz."},
+{cat:"Satzbau",f:"Was ist ein Nebensatz?",a:["Ein abhaengiger Satz, der an einen Hauptsatz gebunden ist","Ein kurzer Satz","Ein Satz ohne Objekt","Ein Hauptsatz mit Konjunktion"],r:0,e:"Nebensaetze sind abhaengig vom Hauptsatz und machen alleine keinen vollstaendigen Sinn. Erkennungszeichen: Das Verb steht am Ende. Einleitung durch Konjunktionen wie 'weil', 'dass', 'obwohl'.",tip:"Nebensatz erkennen: Verb am Ende! 'weil er krank IST' (nicht: er ist krank)"},
+{cat:"Rechtschreibung",f:"Welche Schreibweise ist korrekt?",a:["die Tuer","die Tuhr","die Tühr","die Thür"],r:0,e:"'Tuer' (Tür) schreibt man mit Umlaut 'ue' (ü). Es gibt kein stummes 'h' in diesem Wort. Achte beim Schreiben am Computer ohne Umlaut-Taste auf 'ue' statt 'u'.",tip:"Umlaut ue/ü merken: Tuer, Buecher, Kueche – kein 'h' dahinter!"},
+{cat:"Rechtschreibung",f:"Welches Wort ist richtig geschrieben?",a:["Pferd","Ferd","Pfert","Pherd"],r:0,e:"'Pferd' beginnt mit 'Pf' – einem typisch deutschen Anlaut, den es in vielen anderen Sprachen nicht gibt. Am Wortende steht 'd', auch wenn man eher ein 't' hoert (Auslautverhärtung).",tip:"Verlaengerungsprobe: Pferd → Pferde (man hoert das 'd') → also 'd' schreiben"},
+{cat:"Rechtschreibung",f:"Wie schreibt man das Wort richtig?",a:["nämlich","naemlich","nemlich","nähmlich"],r:0,e:"'naemlich' (nämlich) schreibt man mit dem Umlaut ä. Es bedeutet so viel wie 'und zwar' oder 'das heisst'. Es gibt kein 'h' nach dem 'ä'.",tip:"naemlich = und zwar. Kein stummes h: nähmlich ist falsch!"},
+{cat:"Wortarten",f:"Welches Wort ist ein Personalpronomen?",a:["ich","schnell","Hund","laufen"],r:0,e:"Personalpronomen ersetzen Personen oder Dinge und zeigen an, wer spricht oder handelt: ich, du, er, sie, es, wir, ihr, sie. 'ich' ist die 1. Person Singular.",tip:"Personalpronomen: ich, du, er/sie/es, wir, ihr, sie – die 'Personenwoerter'"},
+{cat:"Wortarten",f:"Was ist ein Possessivpronomen?",a:["Ein Besitz anzeigendes Wort wie 'mein'","Ein Frage-Pronomen","Ein Zeitwort","Ein Adjektiv ohne Besitz"],r:0,e:"Possessivpronomen zeigen Besitz oder Zugehoerigkeit an: mein, dein, sein, ihr, unser, euer. Beispiel: 'Das ist MEIN Buch.' Sie passen sich dem Nomen in Geschlecht und Fall an.",tip:"Possessiv = Besitz. mein Buch, deine Tasche, sein Auto"},
+{cat:"Grammatik",f:"Welcher Artikel gehoert zu 'Katze'?",a:["die","der","das","ein"],r:0,e:"'Katze' ist ein weibliches Nomen (Femininum), daher 'die Katze'. Im Plural heisst es 'die Katzen' (gleicher Artikel im Plural fuer alle Geschlechter).",tip:"DIE Katze, DIE Maus, DIE Blume – viele Tiernamen sind weiblich"},
+{cat:"Grammatik",f:"Was ist der Plural von 'der Tisch'?",a:["die Tische","die Tischer","die Tischen","die Tisch"],r:0,e:"Der Plural von 'Tisch' lautet 'Tische' – mit der Endung '-e'. Diese Endung ist bei vielen maennlichen Nomen ueblich: der Tisch → die Tische, der Fisch → die Fische.",tip:"Pluralendung -e: Tisch→Tische, Fisch→Fische, Brief→Briefe"},
+{cat:"Grammatik",f:"Wie lautet die Steigerung von 'gut'?",a:["gut – besser – am besten","gut – guter – am gutesten","gut – guenstiger – am guenstigsten","gut – besserer – am bestesten"],r:0,e:"'gut' hat eine unregelmaessige Steigerung: gut – besser – am besten. Diese Form muss man auswendig lernen, da sie nicht der normalen Regel (+er, +sten) folgt.",tip:"Unregelmaessige Steigerung: gut-besser-am besten, viel-mehr-am meisten"},
+{cat:"Grammatik",f:"Was ist die Mehrzahl (Plural) von 'die Maus'?",a:["die Maeuse","die Mause","die Mausen","die Maeusen"],r:0,e:"Der Plural von 'Maus' ist 'Maeuse' – mit Umlaut (au → aeu) und der Endung '-e'. Diese Pluralform mit Umlaut findet man bei vielen einsilbigen weiblichen Nomen.",tip:"Umlaut-Plural: Maus→Maeuse, Wand→Waende, Hand→Haende"},
+{cat:"Zeichensetzung",f:"Wie endet ein Aussagesatz?",a:["Mit einem Punkt","Mit einem Fragezeichen","Mit einem Ausrufezeichen","Mit drei Punkten"],r:0,e:"Ein Aussagesatz (Deklarativsatz) endet immer mit einem Punkt. Er gibt eine Information weiter, ohne zu fragen oder zu befehlen. Beispiel: 'Die Sonne scheint.'",tip:"Aussage = Punkt. Frage = Fragezeichen. Befehl/Ausruf = Ausrufezeichen."},
+{cat:"Zeichensetzung",f:"Wann setzt man ein Fragezeichen?",a:["Am Ende eines Fragesatzes","Am Ende jedes Satzes","Nur bei W-Fragen","Nie bei direkten Fragen"],r:0,e:"Ein Fragezeichen steht am Ende eines direkten Fragesatzes – egal ob W-Frage ('Wer kommt?') oder Ja/Nein-Frage ('Kommst du?'). Bei indirekten Fragen ('Ich frage mich, wer kommt.') steht KEIN Fragezeichen.",tip:"Direkte Frage = Fragezeichen. Indirekte Frage (mit 'ob/wer/was...') = Punkt!"},
+{cat:"Satzbau",f:"Wo steht das Verb in einem einfachen Aussagesatz?",a:["An zweiter Stelle","An erster Stelle","Immer am Ende","Beliebig"],r:0,e:"Im deutschen Aussagesatz steht das konjugierte Verb an zweiter Position. Beispiel: 'Die Kinder [1] spielen [2] im Garten.' Das gilt auch, wenn der Satz mit einer anderen Wortgruppe beginnt: 'Gestern [1] spielten [2] die Kinder...'",tip:"Verb-Zweit-Stellung: Position 1 + VERB (Position 2) + Rest des Satzes"},
+{cat:"Wortbildung",f:"Was ist eine Verniedlichungsform (Diminutiv)?",a:["Eine Verkleinerungsform wie 'Haeuschen'","Eine Vergroesserungsform","Eine Mehrzahlform","Eine Vergangenheitsform"],r:0,e:"Diminutive sind Verkleinerungsformen, die mit den Endungen '-chen' oder '-lein' gebildet werden: Haus → Haeuschen, Buch → Buechlein. Sie druecken oft auch Zaertlichkeit aus.",tip:"Verkleinerung: -chen oder -lein. Haus→Haeuschen, Hund→Huendchen"}
+],
+
+mittel:[
+// GRAMMATIK - FAELLE
+{cat:"Grammatik",f:"In welchem Fall steht 'den Hund' im Satz 'Ich sehe den Hund'?",a:["Akkusativ (4. Fall)","Nominativ (1. Fall)","Dativ (3. Fall)","Genitiv (2. Fall)"],r:0,e:"'den Hund' beantwortet die Frage 'Wen oder was sehe ich?' – das ist der Akkusativ (4. Fall). Der Akkusativ zeigt das direkte Objekt einer Handlung.",tip:"Akkusativ-Frage: 'Wen oder was?' → 'Ich sehe WEN?' → den Hund."},
+{cat:"Grammatik",f:"Welcher Artikel steht im Akkusativ fuer ein maennliches Nomen?",a:["den","der","dem","des"],r:0,e:"Im Akkusativ veraendert sich bei maennlichen Nomen der Artikel: Nominativ 'der' wird zu Akkusativ 'den'. Beispiel: Der Hund schlaeft (Nom.) – Ich sehe den Hund (Akk.).",tip:"Nur bei maennlichen Nomen aendert sich der Artikel: der → den"},
+{cat:"Grammatik",f:"Welche Praeposition verlangt immer den Dativ?",a:["mit","durch","fuer","ohne"],r:0,e:"'mit' verlangt immer den Dativ (3. Fall): mit dem Freund, mit der Mutter, mit dem Kind. 'durch', 'fuer' und 'ohne' verlangen den Akkusativ (4. Fall).",tip:"Dativ-Praepositionen merken: 'aus, bei, mit, nach, seit, von, zu, gegenueber'"},
+{cat:"Grammatik",f:"Welche Praeposition verlangt den Akkusativ?",a:["durch","mit","von","bei"],r:0,e:"'durch' verlangt immer den Akkusativ (4. Fall): durch den Wald, durch die Stadt. Merkhilfe fuer Akkusativ-Praepositionen: 'bis, durch, fuer, gegen, ohne, um, wider'.",tip:"Akkusativ-Praepositionen: 'bis, durch, fuer, gegen, ohne, um'"},
+{cat:"Grammatik",f:"Was zeigt der Genitiv an?",a:["Zugehoerigkeit oder Besitz","Das Subjekt der Handlung","Das direkte Objekt","Das indirekte Objekt"],r:0,e:"Der Genitiv (2. Fall) drueckt Zugehoerigkeit oder Besitz aus. Frage: 'Wessen?' – 'das Buch des Lehrers' = das Buch gehoert dem Lehrer.",tip:"Genitiv-Frage: 'Wessen?' → das Buch DES Lehrers, die Tasche DER Mutter"},
+// GRAMMATIK - ZEITFORMEN
+{cat:"Grammatik",f:"Welche Zeitform ist 'Gestern spielte ich Fussball'?",a:["Praeteritum (Imperfekt)","Perfekt","Futur","Praesens"],r:0,e:"Das Praeteritum (auch Imperfekt genannt) ist eine Vergangenheitsform. Es wird vor allem in geschriebenen Texten verwendet. 'spielte' = 1. Person Singular Praeteritum von 'spielen'.",tip:"Praeteritum erkennst du an der Endung '-te': spielte, rannte, lachte."},
+{cat:"Grammatik",f:"Wie bildet man das Praeteritum von 'gehen'?",a:["ging","gehing","gehte","ist gegangen"],r:0,e:"'gehen' ist ein starkes (unregelmaessiges) Verb. Es veraendert seinen Vokalstamm im Praeteritum: geh- → ging-. Starke Verben muss man auswendig lernen.",tip:"Starke Verben: gehen → ging, kommen → kam, sehen → sah, laufen → lief"},
+{cat:"Grammatik",f:"Wann benutzt man das Perfekt mit 'sein'?",a:["Bei Bewegungs- und Zustandsveraenderungsverben","Bei allen Verben","Nie","Nur bei unregelmaessigen Verben"],r:0,e:"Das Perfekt bildet man mit 'haben' ODER 'sein'. 'sein' benutzt man bei Verben, die eine Bewegung oder Zustandsveraenderung ausdruecken: laufen → ist gelaufen, fallen → ist gefallen.",tip:"'sein'-Verben: laufen, gehen, fahren, fallen, wachsen, sterben, aufwachen"},
+{cat:"Grammatik",f:"Was ist das Plusquamperfekt?",a:["Die Vorvergangenheit (noch weiter in der Vergangenheit)","Die einfache Vergangenheit","Die Gegenwartsform","Die Zukunft"],r:0,e:"Das Plusquamperfekt drueckt aus, dass etwas passierte, BEVOR etwas anderes in der Vergangenheit passierte. Bildung: hatte/war + Partizip II. Beispiel: 'Nachdem er gegessen hatte, schlief er.'",tip:"Zeitlinie: Plusquamperfekt → Praeteritum → Perfekt → Gegenwart"},
+{cat:"Grammatik",f:"Welche Zeitform beschreibt Zukunft?",a:["Futur I (werden + Infinitiv)","Praeteritum","Perfekt","Plusquamperfekt"],r:0,e:"Das Futur I bildet man mit dem Hilfsverb 'werden' + Infinitiv. Beispiel: 'Ich werde morgen lernen.' Im Alltag benutzt man aber oft das Praesens mit Zeitangabe: 'Ich lerne morgen.'",tip:"Futur I: werden + Infinitiv. 'Ich WERDE kommen.' = Ich werde es tun."},
+// GRAMMATIK - SATZGLIEDER
+{cat:"Grammatik",f:"Was ist das Praedikat?",a:["Das Verb im Satz","Das Subjekt","Das Objekt","Die Ergaenzung"],r:0,e:"Das Praedikat ist das Verb (oder mehrere Verben zusammen). Es ist das Herzstuck des Satzes und beschreibt die Handlung, den Zustand oder das Geschehen. Ohne Praedikat ist kein Satz moeglich.",tip:"Praedikat finden: Was passiert im Satz? Das Verb = Praedikat."},
+{cat:"Grammatik",f:"Was ist ein Attribut?",a:["Eine naehere Bestimmung eines Nomens","Das Subjekt des Satzes","Ein eigenstaendiges Satzglied","Das Praedikat"],r:0,e:"Ein Attribut ist eine Ergaenzung, die ein Nomen naeher beschreibt. Es kann ein Adjektiv sein ('das rote Haus'), ein Genitiv ('das Haus meines Vaters') oder ein Nebensatz.",tip:"Attribut fragt: 'Was fuer ein...?' – das ROTE Haus (Adjektiv-Attribut)"},
+{cat:"Grammatik",f:"Welche Aussage ueber trennbare Verben stimmt?",a:["Das Praefix wird bei Konjugation abgetrennt","Trennbare Verben haben kein Praefix","Das Praefix wird nie abgetrennt","Trennbare Verben haben zwei Objekte"],r:0,e:"Trennbare Verben haben ein Praefix, das bei der Konjugation ans Satzende wandert. Beispiel: 'aufmachen' → 'Er macht die Tuer AUF.' Das Praefix 'auf-' wird abgetrennt.",tip:"Trennbare Praefix-Liste: ab-, an-, auf-, aus-, bei-, ein-, mit-, vor-, zu-"},
+// RECHTSCHREIBUNG
+{cat:"Rechtschreibung",f:"Was bedeutet 'Auslautverhärtung' fuer die Schreibung?",a:["Man schreibt den Stamm, nicht den Klang","Man schreibt, was man hoert","Man schreibt immer mit ss","Man schreibt immer mit tz"],r:0,e:"Am Wortende werden stimmhafte Konsonanten (b, d, g) stimmlos gesprochen: 'Hund' klingt wie 'Hunt'. Trotzdem schreibt man 'd', weil der Stamm 'Hund-' lautet (Probe: Hunde).",tip:"Verlaengerungsprobe: Hund → Hunde (d hoerbar) → schreib 'd'!"},
+{cat:"Rechtschreibung",f:"Welche Schreibweise ist korrekt fuer 'wegen + Nomen'?",a:["wegen des Wetters","wegen dem Wetter","wegen den Wetters","wegen das Wetter"],r:0,e:"'wegen' verlangt den Genitiv (2. Fall). Korrekt ist: 'wegen des Wetters', 'wegen der Kälte'. Umgangssprachlich sagt man oft 'wegen dem', aber das ist grammatisch falsch.",tip:"'Wegen' + Genitiv: wegen DES Regens, wegen DER Kaelte"},
+{cat:"Rechtschreibung",f:"Wann schreibt man 'seit', wann 'seid'?",a:["'seit' = Zeitangabe; 'seid' = Verb (ihr seid)","'seid' = Zeitangabe; 'seit' = Verb","Beides ist dasselbe","'seit' immer, 'seid' nie"],r:0,e:"'seit' ist eine Praeposition fuer Zeitangaben: 'seit drei Tagen', 'seit gestern'. 'seid' ist die 2. Person Plural von 'sein': 'Ihr seid muede.' Haeufiger Fehler: 'ich habe seid Jahren...' (falsch!).",tip:"Test: Kann man 'ihr seid' ersetzen? Dann gross 'Seid'. Sonst klein 'seit'."},
+{cat:"Rechtschreibung",f:"Welche Form ist richtig: 'das selbe' oder 'dasselbe'?",a:["dasselbe (zusammen)","das selbe (getrennt)","beides ist richtig","das Selbe"],r:0,e:"'derselbe', 'dieselbe', 'dasselbe' werden immer zusammengeschrieben. Es handelt sich um ein zusammengesetztes Pronomen. Getrennte Schreibung 'das selbe' ist falsch.",tip:"Zusammen: derselbe Mann, dieselbe Frau, dasselbe Kind"},
+{cat:"Rechtschreibung",f:"Wann benutzt man 'wenn', wann 'wann'?",a:["'wenn' = Bedingung/Wiederholung; 'wann' = Frage nach Zeit","'wann' = Bedingung; 'wenn' = Frage","Beides gleich","'wenn' immer klein, 'wann' immer gross"],r:0,e:"'wann' fragt nach dem Zeitpunkt: 'Wann kommst du?' oder 'Ich weiss nicht, wann er kommt.' 'wenn' leitet Bedingungen ein: 'Wenn es regnet, bleibe ich zu Hause.'",tip:"'Wann' = Zeitfrage. 'Wenn' = Bedingung oder Wiederholung."},
+// ZEICHENSETZUNG
+{cat:"Zeichensetzung",f:"Wann steht vor einem Nebensatz ein Komma?",a:["Immer, wenn ein Nebensatz beginnt","Nur nach langen Saetzen","Nie","Nur bei 'weil'"],r:0,e:"Vor jedem Nebensatz steht ein Komma – egal ob der Nebensatz vorne, hinten oder in der Mitte steht. Nebensaetze beginnen mit Konjunktionen wie: weil, dass, obwohl, wenn, damit...",tip:"Konjunktion gesehen? Komma setzen! 'Er lernt, WEIL er eine gute Note will.'"},
+{cat:"Zeichensetzung",f:"Welcher Satz ist richtig interpunktiert?",a:["Obwohl es regnete, spielten die Kinder draussen.","Obwohl es regnete spielten die Kinder draussen.","Obwohl, es regnete spielten die Kinder draussen.","Obwohl es regnete spielten, die Kinder draussen."],r:0,e:"Wenn ein Nebensatz dem Hauptsatz vorangestellt wird, steht nach dem Nebensatz ein Komma: 'Obwohl es regnete, [Komma] spielten die Kinder draussen.'",tip:"Voran-gestellter Nebensatz + Komma + Hauptsatz"},
+{cat:"Zeichensetzung",f:"Welcher Satz hat die richtige Zeichensetzung bei einer Aufzaehlung?",a:["Ich kaufe Aepfel, Birnen und Orangen.","Ich kaufe Aepfel, Birnen, und Orangen.","Ich kaufe, Aepfel, Birnen und Orangen.","Ich kaufe Aepfel Birnen und Orangen."],r:0,e:"Bei Aufzaehlungen trennt man alle Glieder durch Komma – ausser vor dem letzten 'und' (im Deutschen setzt man kein Komma vor 'und' in Aufzaehlungen).",tip:"Kein Komma vor 'und' in Aufzaehlungen: Aepfel, Birnen und Orangen ✓"},
+// WORTBILDUNG
+{cat:"Wortbildung",f:"Was ist eine Ableitung?",a:["Ein neues Wort, das aus einem Grundwort gebildet wird","Ein zusammengesetztes Nomen","Ein Verb im Praeteritum","Eine Negation"],r:0,e:"Ableitungen entstehen, wenn man einem Grundwort eine Vor- oder Nachsilbe hinzufuegt. Beispiele: 'spielen' → 'Spieler' (mit -er), 'Freude' → 'freudig' (mit -ig), 'moeglich' → 'unmoeeglich' (mit un-).",tip:"Vorsilben: un-, ver-, be-, er-. Nachsilben: -ung, -heit, -keit, -er, -in"},
+{cat:"Wortbildung",f:"Was bedeutet die Vorsilbe 'un-'?",a:["Verneinung (das Gegenteil)","Vergroesserung","Verkleinerung","Zeitangabe"],r:0,e:"Die Vorsilbe 'un-' drueckt das Gegenteil oder eine Verneinung aus. Beispiele: moeglich → unmoeglich, gluecklich → ungluecklich, bekannt → unbekannt.",tip:"un- = nicht. unmoeeglich = nicht moeglich"},
+// SATZBAU
+{cat:"Satzbau",f:"Was ist ein Satzgefuege?",a:["Ein Hauptsatz mit mindestens einem Nebensatz","Zwei gleichrangige Hauptsaetze","Ein sehr langer Satz","Ein Satz mit mehreren Subjekten"],r:0,e:"Ein Satzgefuege besteht aus einem Hauptsatz und mindestens einem davon abhaengigen Nebensatz. Beispiel: 'Er sagte, [dass er muede sei].' – der Nebensatz in eckigen Klammern ist abhaengig.",tip:"Satzgefuege = Hauptsatz + Nebensatz(saetze)"},
+{cat:"Satzbau",f:"Was ist eine Satzreihe?",a:["Zwei oder mehr Hauptsaetze, die verbunden sind","Ein Satz mit Nebensaetzen","Ein Satz mit mehreren Praedikaten","Ein Satz ohne Objekt"],r:0,e:"In einer Satzreihe werden gleichrangige Hauptsaetze durch Konjunktionen (und, aber, oder) oder Semikolon verbunden. Beispiel: 'Die Sonne scheint und die Voegel singen.'",tip:"Satzreihe = HS + HS (gleichrangig). Satzgefuege = HS + NS (abhaengig)."},
+{cat:"Satzbau",f:"Was versteht man unter der Verbklammer?",a:["Das Verb steht an zwei Stellen im Satz (Position 2 und Ende)","Das Verb steht immer am Anfang","Das Verb steht immer am Ende","Das Verb kann ueberall stehen"],r:0,e:"In deutschen Hauptsaetzen bilden Verben eine 'Klammer': Das konjugierte Verb steht an Position 2, trennbare oder andere Verbteile wandern ans Satzende. Beispiel: 'Er MACHT morgen die Tuer AUF.'",tip:"Verbklammer: Ich HABE gestern viel gelernt HABEN. Anfang und Ende des Verbs."},
+{cat:"Grammatik",f:"Welche Form ist der Imperativ (Befehlsform) von 'kommen' fuer 'du'?",a:["Komm!","Du kommst!","Kommen!","Gekommen!"],r:0,e:"Der Imperativ ist die Befehlsform. Bei 'du' bildet man ihn meist durch den Verbstamm ohne Endung: kommen → Komm! Bei 'ihr': Kommt! Bei 'Sie' (hoeflich): Kommen Sie!",tip:"Imperativ 'du': Verbstamm ohne -en. kommen→Komm!, gehen→Geh!"},
+{cat:"Grammatik",f:"Was ist ein Modalverb?",a:["Ein Verb wie 'koennen', 'muessen', 'wollen', das die Art einer Handlung ausdrueckt","Ein Hilfsverb fuer die Vergangenheit","Ein trennbares Verb","Ein reflexives Verb"],r:0,e:"Modalverben (koennen, muessen, duerfen, sollen, wollen, moegen) druecken eine Einstellung zur Handlung aus: Faehigkeit, Notwendigkeit, Erlaubnis, Wunsch. Sie stehen meist mit einem Infinitiv: 'Ich KANN schwimmen.'",tip:"Modalverben: koennen (Faehigkeit), muessen (Pflicht), wollen (Wunsch), duerfen (Erlaubnis)"},
+{cat:"Grammatik",f:"Wie lautet die 3. Person Singular Praesens von 'haben'?",a:["hat","habt","haben","habst"],r:0,e:"Die Konjugation von 'haben' im Praesens: ich habe, du hast, er/sie/es HAT, wir haben, ihr habt, sie haben. 'hat' ist die unregelmaessige Form fuer die 3. Person Singular.",tip:"haben ist unregelmaessig: ich habe, du HAST, er HAT (nicht 'habt')"},
+{cat:"Rechtschreibung",f:"Welche Schreibweise ist korrekt: 'aufgrund' oder 'auf Grund'?",a:["aufgrund (zusammen, beide Schreibweisen erlaubt)","nur 'auf Grund' ist korrekt","nur Grossschreibung 'Aufgrund' ist korrekt","beide sind falsch"],r:0,e:"'aufgrund' kann sowohl zusammen als auch getrennt ('auf Grund') geschrieben werden – beide Varianten sind laut Duden korrekt. Haeufiger ist heute die Zusammenschreibung 'aufgrund'.",tip:"Beide erlaubt: aufgrund / auf Grund. Im Zweifel: zusammen schreiben."},
+{cat:"Rechtschreibung",f:"Wie schreibt man die Anrede in einem Brief richtig?",a:["Liebe Frau Mueller,","liebe Frau Mueller,","Liebe frau Mueller,","Liebe Frau mueller,"],r:0,e:"In der Anrede eines Briefes schreibt man das erste Wort gross (Liebe) sowie alle Nomen (Frau, Mueller). Nach der Anrede folgt ein Komma, und der naechste Satz beginnt klein (ausser bei Eigennamen).",tip:"Anrede-Regel: Erstes Wort gross + alle Nomen gross + Komma am Ende"},
+{cat:"Wortarten",f:"Was ist ein Demonstrativpronomen?",a:["Ein hinweisendes Pronomen wie 'dieser' oder 'jener'","Ein Frage-Pronomen","Ein Besitz-Pronomen","Ein Personal-Pronomen"],r:0,e:"Demonstrativpronomen weisen auf etwas Bestimmtes hin: dieser, diese, dieses, jener, jene, jenes. Beispiel: 'DIESES Buch gehoert mir, JENES gehoert dir.'",tip:"Demonstrativ = hinweisend. dieser/diese/dieses zeigen auf etwas Bestimmtes."},
+{cat:"Wortarten",f:"Was ist ein Interrogativpronomen?",a:["Ein Frage-Pronomen wie 'wer' oder 'was'","Ein Possessivpronomen","Ein Demonstrativpronomen","Ein Personalpronomen"],r:0,e:"Interrogativpronomen leiten Fragen ein: wer, was, wessen, wem, wen, welcher. Beispiel: 'WER kommt heute?' 'WAS moechtest du essen?'",tip:"Interrogativ = Frage. wer? was? wessen? wem? welcher?"},
+{cat:"Grammatik",f:"Was ist ein unregelmaessiges (starkes) Verb?",a:["Ein Verb, das seinen Stammvokal in der Vergangenheit aendert","Ein Verb ohne Vergangenheitsform","Ein Verb mit zwei Objekten","Ein trennbares Verb"],r:0,e:"Starke (unregelmaessige) Verben aendern ihren Stammvokal im Praeteritum und/oder Partizip II: singen→sang→gesungen, finden→fand→gefunden. Diese Formen muss man auswendig lernen.",tip:"Starke Verben: Stammvokal aendert sich. singen-sang-gesungen (i-a-u)"},
+{cat:"Grammatik",f:"Was ist ein schwaches (regelmaessiges) Verb?",a:["Ein Verb, das im Praeteritum die Endung '-te' bekommt","Ein Verb ohne Praesens","Ein Verb nur im Plural","Ein Modalverb"],r:0,e:"Schwache Verben sind regelmaessig: Sie bilden das Praeteritum mit der Endung '-te' und das Partizip II mit 'ge-' und '-t', ohne den Stammvokal zu aendern. Beispiel: spielen→spielte→gespielt.",tip:"Schwache Verben: regelmaessig mit -te/-t. spielen-spielte-gespielt"},
+{cat:"Zeichensetzung",f:"Wie zitiert man woertliche Rede korrekt?",a:["Er sagte: \"Ich komme morgen.\"","Er sagte, \"Ich komme morgen.\"","Er sagte: Ich komme morgen.","Er sagte \"Ich komme morgen\"."],r:0,e:"Woertliche Rede wird durch Anfuehrungszeichen markiert und durch einen Doppelpunkt eingeleitet, wenn ein Begleitsatz vorangeht: 'Er sagte: \"Ich komme morgen.\"' Der Punkt steht innerhalb der Anfuehrungszeichen.",tip:"Doppelpunkt + Anfuehrungszeichen: Er sagte: \"...\". Punkt VOR dem Anfuehrungszeichen."},
+{cat:"Wortbildung",f:"Wie bildet man aus 'Freund' das Adjektiv 'freundlich'?",a:["Mit der Nachsilbe '-lich'","Mit der Vorsilbe 'un-'","Mit der Endung '-ung'","Mit Verdoppelung"],r:0,e:"Aus dem Nomen 'Freund' wird durch die Nachsilbe '-lich' das Adjektiv 'freundlich'. Diese Nachsilbe bildet oft Adjektive aus Nomen: Freund→freundlich, Gefahr→gefaehrlich, Glueck→gluecklich.",tip:"-lich macht Adjektive: Freund→freundlich, Glueck→gluecklich"},
+{cat:"Grammatik",f:"Was ist ein Reflexivverb?",a:["Ein Verb mit Reflexivpronomen wie 'sich freuen'","Ein Verb ohne Subjekt","Ein trennbares Verb","Ein Modalverb"],r:0,e:"Reflexivverben werden immer mit einem Reflexivpronomen (sich) verwendet: sich freuen, sich waschen, sich beeilen. Das Reflexivpronomen bezieht sich auf das Subjekt zurueck.",tip:"Reflexivverben brauchen 'sich': sich freuen, sich waschen, sich erinnern"}
+],
+
+schwer:[
+// GRAMMATIK KOMPLEX
+{cat:"Grammatik",f:"Was ist der Unterschied zwischen 'das' und 'dass'?",a:["'das' = Artikel/Pronomen (ersetzbar durch 'welches'); 'dass' = Konjunktion","'dass' = Artikel; 'das' = Konjunktion","Beide gleich","Kein Unterschied"],r:0,e:"'das' ist Artikel ('das Haus') oder Demonstrativpronomen ('Das ist schoen.'). Ersetztest: Kann man 'welches' einsetzen? Dann 'das'. 'dass' ist eine Konjunktion: 'Er sagt, dass er kommt.'",tip:"Ersatzprobe: 'welches' moeglich → 'das'. Nicht moeglich → 'dass'"},
+{cat:"Grammatik",f:"Was ist der Konjunktiv II und wozu dient er?",a:["Ausdruck von Unwirklichem oder Hoeflichkeit","Ausdruck von Vergangenem","Ausdruck von Zukunft","Ausdruck von Befehlen"],r:0,e:"Der Konjunktiv II drueckt aus, dass etwas nicht wirklich ist (Wunsch, Hypothese) oder wird fuer hoefliche Bitten verwendet. Beispiele: 'Wenn ich reich waere...' / 'Koennten Sie mir helfen?'",tip:"Konjunktiv II = nicht wirklich oder hoeflich. waere, haette, koennte, wuerden"},
+{cat:"Grammatik",f:"Was drueckt das Passiv aus?",a:["Das Objekt rueckt ins Zentrum, der Handelnde tritt zurueck","Die Handlung des Subjekts","Eine zukuenftige Handlung","Eine verneinte Handlung"],r:0,e:"Im Passiv steht nicht der Handelnde, sondern die Handlung selbst im Mittelpunkt. Bildung: werden + Partizip II. Beispiel: 'Das Buch wird gelesen.' (Wer liest? – nicht wichtig)",tip:"Aktiv: 'Der Lehrer erklaert die Aufgabe.' Passiv: 'Die Aufgabe wird erklaert.'"},
+{cat:"Grammatik",f:"Was ist der Unterschied zwischen Vorgangspassiv und Zustandspassiv?",a:["Vorgangspassiv: Handlung laeuft ab (wird); Zustandspassiv: Ergebnis (ist)","Beides ist identisch","Vorgangspassiv mit 'sein', Zustandspassiv mit 'werden'","Nur das Zustandspassiv existiert"],r:0,e:"Vorgangspassiv: 'Die Tuer wird geoeffnet.' (der Vorgang passiert gerade). Zustandspassiv: 'Die Tuer ist geoeffnet.' (das Ergebnis/der Zustand nach dem Oeffnen).",tip:"wird + Partizip II = Vorgang. ist + Partizip II = Zustand/Ergebnis"},
+{cat:"Grammatik",f:"Was ist ein erweiterter Infinitiv?",a:["Infinitiv mit 'zu' und Ergaenzungen, durch Komma abgetrennt","Infinitiv ohne 'zu'","Verb im Imperativ","Verb im Passiv"],r:0,e:"Ein erweiterter Infinitiv enthaelt 'zu' + Infinitiv mit weiteren Ergaenzungen. Er wird durch Komma vom Hauptsatz getrennt. Beispiel: 'Er hofft, morgen frueh aufzustehen.'",tip:"Komma vor erweitertem Infinitiv: 'Er versucht, [die Aufgabe zu loesen].'"},
+{cat:"Grammatik",f:"Was ist ein Gerundivum?",a:["Eine zu-Konstruktion mit passivischer Bedeutung (ist zu + Infinitiv)","Ein Verb im Genitiv","Ein Plural-Nomen","Ein Adverb"],r:0,e:"Das Gerundivum drueckt Notwendigkeit oder Moeglichkeit aus: 'Das Problem ist zu loesen' = Das Problem muss/kann geloest werden. Es verbindet passivische und modale Bedeutung.",tip:"Gerundivum: 'ist zu + Infinitiv' = Notwendigkeit oder Moeglichkeit"},
+{cat:"Grammatik",f:"Was ist ein Relativsatz?",a:["Ein Nebensatz, der ein Nomen naeher bestimmt","Ein Hauptsatz mit Relativpronomen","Ein Vergleichssatz","Ein Bedingungssatz"],r:0,e:"Relativsaetze bestimmen ein Nomen naeher – aehnlich wie ein Adjektiv. Sie beginnen mit einem Relativpronomen (der, die, das, welcher...). Beispiel: 'Das Buch, das ich lese, ist spannend.'",tip:"Relativsatz: 'Das Buch, DAS ich lese, ist spannend.' – 'das' = Relativpronomen"},
+{cat:"Grammatik",f:"Was unterscheidet einen konzessiven Nebensatz von einem kausalen?",a:["Konzessiv: obwohl (Einraeumung); Kausal: weil (Grund)","Kausal: obwohl; Konzessiv: weil","Beide sind gleich","Konzessiv: wenn; Kausal: obwohl"],r:0,e:"Kausale Nebensaetze nennen einen Grund (weil, da): 'Er blieb zu Hause, weil er krank war.' Konzessive Nebensaetze raeumen etwas ein, obwohl es dagegen spricht (obwohl, obgleich): 'Er ging raus, obwohl es regnete.'",tip:"weil = Grund (kausal). obwohl = trotzdem (konzessiv)"},
+// RECHTSCHREIBUNG
+{cat:"Rechtschreibung",f:"Welcher Satz enthaelt einen Fehler?",a:["Er hat seid gestern Fieber.","Er hat seit gestern Fieber.","Seit gestern hat er Fieber.","Er ist seit gestern krank."],r:0,e:"'seid' ist die 2. Person Plural von 'sein': 'Ihr seid muede.' Fuer Zeitangaben braucht man die Praeposition 'seit': 'seit gestern', 'seit drei Tagen'. 'seid gestern' ist falsch.",tip:"Ersatztest: 'Ihr seid...' (Verb) oder Zeitangabe? Bei Zeit: 'seit' (mit 't')"},
+{cat:"Rechtschreibung",f:"Welches Wort ist ein Fremdwort, das eingedeutscht geschrieben werden kann?",a:["Joghurt/Jogurt","Computer","Internet","Smartphone"],r:0,e:"'Joghurt' (tuerkisch: yogurt) kann im Deutschen auch 'Jogurt' geschrieben werden – beide Schreibweisen sind laut Duden korrekt. Bei Computer, Internet, Smartphone gibt es (noch) keine eingedeutschte Variante.",tip:"Eingedeutschte Fremdwoerter: Delfin/Delphin, Joghurt/Jogurt, Ketschup/Ketchup"},
+{cat:"Rechtschreibung",f:"Was ist die richtige Schreibweise: 'inwiefern' oder 'in wie fern'?",a:["inwiefern (zusammen)","in wie fern (getrennt)","in wieweit (zusammen)","beides gleich"],r:0,e:"'inwiefern' ist ein Adverb und wird zusammengeschrieben. Ebenso: 'inwieweit', 'infolge', 'anstatt', 'aufgrund'. Merke: Wenn ein Ausdruck zu einer neuen Wortart wird, schreibt man ihn oft zusammen.",tip:"Adverbien aus Praepositionen: inwiefern, inwieweit, infolge, trotzdem"},
+{cat:"Rechtschreibung",f:"Welche Schreibung ist bei Nominalgruppen korrekt?",a:["trotz des schlechten Wetters","trotz dem schlechten Wetter","trotz der schlechten Wetters","trotz schlechtem Wetter"],r:0,e:"'trotz' verlangt im Standarddeutschen den Genitiv (2. Fall): 'trotz des Regens', 'trotz der Kaelte', 'trotz des schlechten Wetters'. Umgangssprachlich auch Dativ, aber nicht im Schriftlichen.",tip:"'trotz' + Genitiv (standardsprachlich): trotz DES Regens"},
+// STILISTIK
+{cat:"Stilistik",f:"Was ist ein Pleonasmus?",a:["Bedeutungsdoppelung (z.B. 'weisser Schimmel')","Eine Uebertreibung","Ein Fremdwort","Eine Verneinung"],r:0,e:"Ein Pleonasmus entsteht, wenn zwei Woerter dasselbe bedeuten und man eigentlich nur eines braucht. 'weisser Schimmel': Ein Schimmel ist per Definition weiss. Weitere Beispiele: 'runder Kreis', 'nasser Regen'.",tip:"Pleonasmus erkennen: Sagt ein Wort schon, was das andere bedeutet?"},
+{cat:"Stilistik",f:"Was ist eine Alliteration?",a:["Gleicher Anfangslaut bei mehreren Woertern","Ein Reimpaar","Eine Metapher","Ein langer Satz"],r:0,e:"Eine Alliteration ist ein Stilmittel, bei dem mehrere aufeinanderfolgende Woerter mit demselben Anlaut (Anfangslaut) beginnen. Beispiele: 'Milch macht muede Maenner munter', 'Mit Mann und Maus'.",tip:"Alliteration = Anfangslaut-Anhaeufeung! AAA..."},
+{cat:"Stilistik",f:"Was ist eine Metapher?",a:["Bildlicher Ausdruck ohne 'wie' (z.B. 'Lebensweg')","Ein direkter Vergleich mit 'wie'","Eine Uebertreibung","Ein Fremdwort"],r:0,e:"Eine Metapher uebertraegt die Bedeutung eines Wortes bildhaft. 'Lebensweg' – das Leben ist kein wirklicher Weg, aber das Bild hilft uns, es zu verstehen. Weitere: 'Herzenswaerme', 'Zeitfluss'.",tip:"Metapher: Kein 'wie'! 'Das Leben ist ein Weg' (nicht: 'wie ein Weg')."},
+{cat:"Stilistik",f:"Was ist ein Simile (Vergleich)?",a:["Ein direkter Vergleich mit 'wie'","Ein indirekter Vergleich ohne 'wie'","Eine Uebertreibung","Ein Wortspiel"],r:0,e:"Ein Vergleich (Simile) verbindet zwei Dinge explizit mit 'wie': 'Er laeuft wie ein Gepard.' Im Unterschied zur Metapher ('Er ist ein Gepard') wird der Vergleich direkt benannt.",tip:"Simile = Vergleich MIT 'wie'. Metapher = OHNE 'wie'."},
+{cat:"Stilistik",f:"Was ist eine Hyperbel?",a:["Eine uebertreibende Aussage","Ein direkter Vergleich","Eine Verneinung","Ein Fremdwort"],r:0,e:"Die Hyperbel ist eine bewusste Uebertreibung zum Zweck der Betonung oder des Humors. Beispiele: 'Ich habe dir das tausendmal gesagt!', 'Er ist so hungrig, dass er ein Pferd essen koennte.'",tip:"Hyperbel = bewusste Uebertreibung. 'Ich habe tausendmal gerufen!'"},
+{cat:"Stilistik",f:"Was ist eine Personifikation?",a:["Leblose Dinge werden mit menschlichen Eigenschaften beschrieben","Eine Uebertreibung","Ein Vergleich mit Tieren","Ein Fremdwort"],r:0,e:"Bei der Personifikation werden Gegenstaende, Tiere oder abstrakte Begriffe wie Menschen behandelt. Beispiele: 'Die Sonne lacht', 'Der Wind fluestert', 'Das Glueck klopft an die Tuer'.",tip:"Personifikation: Die SONNE LACHT. Der WIND FLUESTERT. Natur = Mensch."},
+// ZEICHENSETZUNG
+{cat:"Zeichensetzung",f:"Wann setzt man ein Semikolon?",a:["Zwischen zwei inhaltlich verwandten Hauptsaetzen","Vor jedem Nebensatz","Nach Aufzaehlungen","Am Satzende statt Punkt"],r:0,e:"Das Semikolon (Strichpunkt) steht zwischen zwei selbstaendigen Hauptsaetzen, die inhaltlich zusammengehoeren, aber staerker getrennt sein sollen als mit Komma. Beispiel: 'Er lernte hart; trotzdem wurde er nicht Klassenbester.'",tip:"Semikolon = staerkeres Komma zwischen zwei Hauptsaetzen"},
+{cat:"Zeichensetzung",f:"Wann setzt man einen Doppelpunkt?",a:["Vor einer Aufzaehlung, Erklaerung oder woertlicher Rede","Zwischen zwei Nebensaetzen","Vor dem Verb","Am Satzende"],r:0,e:"Der Doppelpunkt kündigt etwas an: eine Aufzaehlung ('Ich brauche: Stift, Heft, Lineal.'), eine Erklaerung ('Es war klar: Er hatte gewonnen.') oder woertliche Rede ('Er rief: Hallo!')",tip:"Doppelpunkt = 'naemlich' oder 'das heisst'. Kuendigt etwas an."},
+{cat:"Zeichensetzung",f:"Wie werden Appositionen (beigefuegte Erklaerungen) abgetrennt?",a:["Durch Kommas: 'Mein Lehrer, Herr Mueller, ist nett.'","Durch Gedankenstriche","Durch Klamm","Gar nicht"],r:0,e:"Appositionen sind nachgestellte Erklaerungen zu einem Nomen und werden durch Kommas eingeschlossen. Beispiel: 'Mein Vater, ein erfahrener Koch, bereitete das Essen zu.'",tip:"Apposition: eine Ergaenzung in Kommas: Herr Mueller, [mein Lehrer,] kommt."},
+// TEXTARBEIT
+{cat:"Textarbeit",f:"Was ist die Denotation eines Wortes?",a:["Die sachliche Grundbedeutung","Die emotionale Nebenbedeutung","Die Uebersetzung","Die Herkunft des Wortes"],r:0,e:"Die Denotation ist die woertliche, neutrale Bedeutung eines Wortes, wie man sie im Woerterbuch findet. Gegensatz: Konnotation (emotionale oder kulturelle Nebenbedeutung).",tip:"Denotation = Woerterbuchbedeutung. Konnotation = Gefuehlswert."},
+{cat:"Textarbeit",f:"Was ist ein Synonym?",a:["Ein Wort mit gleicher oder aehnlicher Bedeutung","Ein Wort mit gegenteiliger Bedeutung","Ein veraltetes Wort","Ein Fremdwort"],r:0,e:"Synonyme sind Woerter mit gleicher oder sehr aehnlicher Bedeutung. Beispiele: 'Auto' und 'PKW' und 'Wagen'. Synonyme bereichern den Stil, weil man nicht immer dasselbe Wort wiederholen muss.",tip:"Synonyme: gross = riesig = gewaltig. Antonyme: gross ≠ klein."},
+{cat:"Textarbeit",f:"Was ist ein Antonym?",a:["Ein Wort mit gegenteiliger Bedeutung","Ein gleichbedeutendes Wort","Ein Fremdwort","Ein zusammengesetztes Nomen"],r:0,e:"Antonyme (Gegenwoerter) haben eine entgegengesetzte Bedeutung. Beispiele: gross ↔ klein, hell ↔ dunkel, schnell ↔ langsam, Freude ↔ Trauer.",tip:"Antonym = Gegenwort. gross ↔ klein, hell ↔ dunkel"},
+{cat:"Grammatik",f:"Was ist der Unterschied zwischen Akkusativobjekt und Dativobjekt?",a:["Akkusativ = direktes Objekt (wen/was); Dativ = indirektes Objekt (wem)","Beide sind identisch","Akkusativ ist immer das Subjekt","Dativ kommt nur bei Verben der Bewegung vor"],r:0,e:"Das Akkusativobjekt (direktes Objekt) antwortet auf 'wen/was?': 'Ich gebe DEM KIND [Dativ] DAS BUCH [Akkusativ].' Das Dativobjekt (indirektes Objekt) antwortet auf 'wem?'.",tip:"Akkusativ = wen/was (direktes Objekt). Dativ = wem (indirektes Objekt)."},
+{cat:"Grammatik",f:"Was ist eine Infinitivkonstruktion mit 'um...zu'?",a:["Eine Konstruktion, die einen Zweck ausdrueckt","Eine Konstruktion fuer die Vergangenheit","Eine Bedingungskonstruktion","Eine Vergleichskonstruktion"],r:0,e:"Die 'um...zu'-Konstruktion drueckt eine Absicht oder einen Zweck aus: 'Er lernt, UM eine gute Note ZU bekommen.' Sie kann nur verwendet werden, wenn Haupt- und Nebensatz dasselbe Subjekt haben.",tip:"um...zu = Zweck/Absicht. 'Ich lerne, UM die Pruefung ZU bestehen.'"},
+{cat:"Grammatik",f:"Wann verwendet man 'damit' statt 'um...zu'?",a:["Wenn Haupt- und Nebensatz unterschiedliche Subjekte haben","Wenn beide Saetze gleiches Subjekt haben","Niemals, beide sind identisch","Nur in der Vergangenheit"],r:0,e:"'damit' verwendet man, wenn Haupt- und Nebensatz verschiedene Subjekte haben: 'Ich erklaere es, DAMIT DU es verstehst.' (Ich ≠ du). Bei gleichem Subjekt: 'um...zu'.",tip:"Verschiedene Subjekte → 'damit'. Gleiches Subjekt → 'um...zu'."},
+{cat:"Rechtschreibung",f:"Welche Schreibweise ist im Brief- und Berichtstil ueblich: 'Es tut mir leid' oder 'Es tut mir Leid'?",a:["Es tut mir leid (klein, Verbalphrase)","Es tut mir Leid (gross)","Beide falsch","Es tut Mir leid"],r:0,e:"'leid tun' ist eine feste Verbindung und wird kleingeschrieben: 'Es tut mir leid.' Man verwechselt es manchmal mit dem Nomen 'das Leid' (Trauer, Schmerz), das grossgeschrieben wird.",tip:"'es tut mir leid' (Ausdruck, klein) ≠ 'das Leid' (Nomen, gross)"},
+{cat:"Stilistik",f:"Was ist eine Ellipse (Auslassung)?",a:["Das bewusste Weglassen von Satzteilen","Eine Wiederholung","Eine Uebertreibung","Ein Reim"],r:0,e:"Eine Ellipse laesst Satzteile aus, die sich aus dem Zusammenhang erschliessen lassen: 'Je frueher, [desto] besser.' oder 'Ich Tee, du Kaffee.' (statt: Ich trinke Tee, du trinkst Kaffee.)",tip:"Ellipse = Auslassung. Der Sinn bleibt trotz fehlendem Wort klar."},
+{cat:"Stilistik",f:"Was ist eine Anapher?",a:["Wortwiederholung am Satzanfang","Wortwiederholung am Satzende","Ein Reim","Eine Verneinung"],r:0,e:"Die Anapher wiederholt ein Wort oder eine Wortgruppe am Anfang aufeinanderfolgender Saetze oder Verse, um Nachdruck zu verleihen. Beispiel: 'Wir werden kaempfen. Wir werden gewinnen. Wir werden siegen.'",tip:"Anapher = Wiederholung am ANFANG. 'WIR werden... WIR werden...'"},
+{cat:"Stilistik",f:"Was ist eine Ironie?",a:["Eine Aussage, die das Gegenteil des Gemeinten ausdrueckt","Eine wortwoertliche Aussage","Ein Vergleich","Eine Uebertreibung"],r:0,e:"Bei der Ironie sagt man etwas, meint aber das Gegenteil – oft erkennbar am Tonfall oder Kontext. Beispiel: Bei strömendem Regen sagt man: 'Tolles Wetter heute!' (gemeint: schlechtes Wetter)",tip:"Ironie = das Gegenteil meinen. Tonfall verraet die wahre Bedeutung."},
+{cat:"Grammatik",f:"Was ist der Unterschied zwischen 'als' und 'wie' bei Vergleichen?",a:["'als' bei Ungleichheit (Komparativ); 'wie' bei Gleichheit","'wie' bei Ungleichheit; 'als' bei Gleichheit","Beide sind austauschbar","Nur 'wie' ist korrekt"],r:0,e:"'als' verwendet man bei Ungleichheit mit dem Komparativ: 'Er ist groesser ALS ich.' 'wie' verwendet man bei Gleichheit: 'Er ist so gross WIE ich.' Ein haeufiger Fehler ist 'groesser wie' statt 'groesser als'.",tip:"Komparativ (-er) → 'als'. Gleichheit (so...wie) → 'wie'. NICHT: 'groesser wie'!"},
+{cat:"Grammatik",f:"Was ist eine Konjunktion, die einen Gegensatz ausdrueckt?",a:["aber","und","weil","dass"],r:0,e:"'aber' ist eine adversative (gegensaetzliche) Konjunktion. Sie verbindet zwei Saetze, die einen Gegensatz oder Widerspruch ausdruecken: 'Er ist klein, ABER stark.' Weitere adversative Konjunktionen: doch, jedoch, allerdings.",tip:"Gegensatz-Konjunktionen: aber, doch, jedoch, allerdings, sondern"},
+{cat:"Rechtschreibung",f:"Welche Schreibweise stimmt: 'zurzeit' oder 'zur Zeit'?",a:["zurzeit (zusammen) = momentan; zur Zeit (getrennt) = zu einer bestimmten Zeit","Beide bedeuten dasselbe und sind austauschbar","Nur 'zur Zeit' ist korrekt","Nur 'zurzeit' ist korrekt"],r:0,e:"'zurzeit' (zusammen) bedeutet 'momentan, gerade jetzt': 'Ich bin zurzeit krank.' 'zur Zeit' (getrennt) bezieht sich auf einen bestimmten historischen Zeitpunkt: 'Zur Zeit Goethes...' Die Bedeutung unterscheidet die Schreibweise!",tip:"zurzeit = jetzt/momentan. zur Zeit + Person/Epoche = damals"},
+{cat:"Grammatik",f:"Was ist eine Apposition im grammatischen Sinn?",a:["Ein nachgestelltes erklaerendes Satzglied im gleichen Fall","Ein vorangestelltes Adjektiv","Ein Nebensatz","Ein Pronomen"],r:0,e:"Eine Apposition ist eine nachgestellte Erlaeuterung zu einem Nomen, die im selben Fall (Kasus) steht: 'Berlin, die Hauptstadt Deutschlands, ist gross.' ('Berlin' und 'die Hauptstadt' stehen beide im Nominativ.)",tip:"Apposition: gleicher Fall wie das Bezugswort, durch Komma abgetrennt"},
+{cat:"Stilistik",f:"Was ist eine rhetorische Frage?",a:["Eine Frage, auf die keine Antwort erwartet wird","Eine echte Wissensfrage","Eine indirekte Frage","Eine Verneinung"],r:0,e:"Eine rhetorische Frage wird gestellt, um eine Aussage zu betonen, nicht um eine echte Antwort zu erhalten. Beispiel: 'Ist das nicht wunderbar?' (Aussage: Das ist wunderbar.)",tip:"Rhetorische Frage = verkleidete Aussage. Keine echte Antwort erwartet."},
+{cat:"Grammatik",f:"Welche Funktion hat das Verb 'werden' ausser im Passiv?",a:["Bildung des Futurs (werden + Infinitiv)","Nur im Passiv verwendbar","Bildung des Perfekts","Bildung des Imperativs"],r:0,e:"'werden' hat mehrere Funktionen: (1) Vollverb: 'Er wird Arzt.' (2) Futur-Hilfsverb: 'Ich werde kommen.' (3) Passiv-Hilfsverb: 'Das Haus wird gebaut.' Diese drei Funktionen muss man unterscheiden koennen.",tip:"werden hat 3 Jobs: Vollverb (Beruf), Futur-Hilfsverb, Passiv-Hilfsverb"},
+{cat:"Zeichensetzung",f:"Wann setzt man Gedankenstriche statt Kommas?",a:["Bei besonders betonten Einschuebs oder Pausen","Nie, Gedankenstriche sind veraltet","Nur am Satzanfang","Nur bei Aufzaehlungen"],r:0,e:"Gedankenstriche (–) koennen wie Kommas einen Einschub markieren, wirken aber staerker und betonen den Einschub mehr: 'Er kam – endlich – nach Hause.' Sie werden auch fuer einen Bruch im Satz oder eine ueberraschende Wendung genutzt.",tip:"Gedankenstrich = staerkere Betonung als Komma. Fuer dramatische Pausen."},
+{cat:"Grammatik",f:"Wann benutzt man 'als' statt 'wenn' in der Vergangenheit?",a:["Bei einem einmaligen Ereignis in der Vergangenheit","Bei wiederholten Ereignissen","Nur in der Zukunft","Nur bei Bedingungen"],r:0,e:"'als' beschreibt ein einmaliges, abgeschlossenes Ereignis in der Vergangenheit: 'ALS ich klein war, wohnte ich in Berlin.' 'wenn' verwendet man fuer Wiederholungen oder Gegenwart/Zukunft: 'WENN ich Zeit habe, lese ich.'",tip:"Einmalig + Vergangenheit → 'als'. Wiederholt oder Gegenwart → 'wenn'."},
+{cat:"Stilistik",f:"Was ist eine Antithese?",a:["Die Gegenueberstellung zwei gegensaetzlicher Begriffe oder Aussagen","Eine Wiederholung","Ein Vergleich mit 'wie'","Eine Uebertreibung"],r:0,e:"Eine Antithese stellt zwei gegensaetzliche Gedanken oder Begriffe bewusst gegenueber, um einen Kontrast zu erzeugen: 'Der eine spricht, der andere schweigt.' oder 'Krieg und Frieden'.",tip:"Antithese = Gegenueberstellung von Gegensaetzen: schwarz/weiss, Krieg/Frieden"}
+]
+};
+
+var G={mode:'ki',diff:'mittel',p1:'Spieler 1',p2:'KI',s1:0,s2:0,round:0,qs:[],q:null,order:[],timer:null,tl:15,turn:1,p1ans:false,p2ans:false,p1ok:false,p2ok:false,lastCorrect:false};
+var KI_ACC={leicht:.58,mittel:.70,schwer:.85};
+
+function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('active',s.id===id);});}
+function setDiff(d,btn){G.diff=d;document.querySelectorAll('.diff-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
+function pickMode(m){
+  if(m==='online'){G.mode='online';show('s-ol-choice');return;}
+  G.mode=m;
+  document.getElementById('names-title').textContent=m==='ki'?'Dein Name':'Namen eingeben';
+  document.getElementById('n2-wrap').style.display=m==='ki'?'none':'';
+  show('s-names');
+  setTimeout(function(){document.getElementById('n1').focus();},80);
+}
+function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
+
+function startGame(){
+  var p1=document.getElementById('n1').value.trim();
+  var p2=document.getElementById('n2').value.trim();
+  G.p1=p1||'Spieler 1';G.p2=G.mode==='ki'?'KI':(p2||'Spieler 2');
+  G.s1=0;G.s2=0;G.round=0;G.turn=1;
+  var pool=QUESTIONS[G.diff]||QUESTIONS.mittel;
+  G.qs=shuffle(pool).slice(0,10);
+  document.getElementById('sn1').textContent=G.p1;
+  document.getElementById('sn2').textContent=G.p2;
+  document.getElementById('sc1').textContent='0';
+  document.getElementById('sc2').textContent='0';
+  document.getElementById('bar1').style.width='0';
+  document.getElementById('bar2').style.width='0';
+  document.getElementById('result-box').classList.add('hidden');
+  show('s-game');nextRound();
+}
+
+function nextRound(){
+  document.getElementById('result-box').classList.add('hidden');
+  G.round++;
+  if(G.round>G.qs.length){if(G.mode==='online'){olDone();}else{endGame();}return;}
+  G.q=G.qs[G.round-1];
+  G.p1ans=false;G.p2ans=false;G.p1ok=false;G.p2ok=false;G.turn=1;G.lastCorrect=false;
+  G.order=shuffle([0,1,2,3]);
+  document.getElementById('result-box').classList.add('hidden');
+  renderQ();setTurn(G.mode==='online'?('Frage '+G.round+' / '+G.qs.length):(G.p1+' ist dran'));startTimer();
+}
+
+function renderQ(){
+  var q=G.q;
+  document.getElementById('rdisplay').textContent=G.round+' / '+G.qs.length;
+  document.getElementById('cbadge').textContent=q.cat;
+  document.getElementById('qcat').textContent=q.cat;
+  document.getElementById('qtext').textContent=q.f;
+  var letters=['A','B','C','D'];
+  var grid=document.getElementById('ans-grid');grid.innerHTML='';
+  G.order.forEach(function(oi,i){
+    var btn=document.createElement('button');
+    btn.className='ans-btn';
+    btn.innerHTML='<span class="ans-letter">'+letters[i]+'</span><span>'+q.a[oi]+'</span>';
+    btn.dataset.oi=String(oi);
+    btn.addEventListener('click',function(){handleAns(oi,btn);});
+    grid.appendChild(btn);
+  });
+  var rfg=document.getElementById('rfg');rfg.classList.remove('urgent');rfg.style.strokeDashoffset='0';rfg.style.transition='none';
+  setTimeout(function(){rfg.style.transition='stroke-dashoffset .9s linear,stroke .3s';},50);
+}
+
+function startTimer(){
+  clearInterval(G.timer);G.tl=15;document.getElementById('tnum').textContent='15';
+  G.timer=setInterval(function(){
+    G.tl--;document.getElementById('tnum').textContent=String(G.tl);
+    document.getElementById('rfg').style.strokeDashoffset=String(195*(1-G.tl/15));
+    if(G.tl<=5)document.getElementById('rfg').classList.add('urgent');
+    if(G.tl<=0){clearInterval(G.timer);handleTimeout();}
+  },1000);
+}
+
+function handleTimeout(){
+  if(G.mode==='online'){revealCorrect();olSendProgress();showResult('timeout',null);return;}
+  if(G.mode==='2p'&&!G.p1ans){G.p1ans=true;G.p1ok=false;if(!G.p2ans){G.turn=2;setTurn(G.p2+' ist dran');resetBtns();startTimer();return;}}
+  revealCorrect();showResult('timeout',null);
+}
+
+function setTurn(t){document.getElementById('tbanner').textContent=t;}
+function resetBtns(){document.querySelectorAll('.ans-btn').forEach(function(b){b.className='ans-btn';b.disabled=false;});}
+
+function handleAns(oi,btn){
+  if(btn.disabled)return;
+  var correct=(oi===G.q.r);
+  if(G.mode==='online'){
+    clearInterval(G.timer);disableAll();markBtn(btn,correct);
+    if(correct)G.s1+=calcPts();
+    updateScores();revealCorrect();G.lastCorrect=correct;
+    olSendProgress();
+    showResult(correct?'correct':'wrong',correct?G.p1:null);
+    return;
+  }
+  if(G.mode==='ki'){
+    clearInterval(G.timer);disableAll();markBtn(btn,correct);
+    if(correct)G.s1+=calcPts();
+    setTimeout(function(){kiAns(function(ok){if(ok)G.s2+=calcPts();updateScores();revealCorrect();G.lastCorrect=correct;showResult(correct?'correct':'wrong',correct?G.p1:(ok?G.p2:null));});},400);
+  } else {
+    if(G.turn===1&&!G.p1ans){
+      G.p1ans=true;G.p1ok=correct;clearInterval(G.timer);disableAll();markBtn(btn,correct);
+      if(correct){G.s1+=calcPts();updateScores();}
+      G.turn=2;setTurn(G.p2+' ist dran');setTimeout(function(){resetBtns();startTimer();},700);
+    } else if(G.turn===2&&!G.p2ans){
+      G.p2ans=true;G.p2ok=correct;clearInterval(G.timer);disableAll();markBtn(btn,correct);
+      if(correct){G.s2+=calcPts();updateScores();}
+      revealCorrect();G.lastCorrect=G.p1ok||G.p2ok;
+      showResult((G.p1ok||G.p2ok)?'correct':'wrong',G.p1ok?G.p1:(G.p2ok?G.p2:null));
+    }
+  }
+}
+
+function calcPts(){return Math.max(1,Math.ceil(G.tl/3));}
+
+function kiAns(cb){
+  var ok=Math.random()<(KI_ACC[G.diff]||.7);var delay=1800+Math.random()*3000;
+  setTurn(G.p2+' denkt nach...');
+  setTimeout(function(){
+    var oi=ok?G.q.r:[0,1,2,3].filter(function(i){return i!==G.q.r;})[Math.floor(Math.random()*3)];
+    document.querySelectorAll('.ans-btn').forEach(function(b){if(parseInt(b.dataset.oi)===oi)b.classList.add(ok?'correct':'wrong');});
+    setTurn(G.p2+(ok?' hat richtig!':" hat falsch!"));cb(ok);
+  },delay);
+}
+
+function disableAll(){document.querySelectorAll('.ans-btn').forEach(function(b){b.disabled=true;});}
+function markBtn(btn,ok){btn.classList.add(ok?'correct':'wrong');}
+function revealCorrect(){
+  document.querySelectorAll('.ans-btn').forEach(function(b){if(parseInt(b.dataset.oi)===G.q.r&&!b.classList.contains('correct'))b.classList.add('reveal');});
+}
+function updateScores(){
+  document.getElementById('sc1').textContent=String(G.s1);document.getElementById('sc2').textContent=String(G.s2);
+  var max=G.qs.length*5;
+  document.getElementById('bar1').style.width=Math.min(100,G.s1/max*100)+'%';
+  document.getElementById('bar2').style.width=Math.min(100,G.s2/max*100)+'%';
+}
+
+function showResult(type,who){
+  var q=G.q;
+  var icons={correct:'\u2705',wrong:'\u274C',timeout:'\u23F1\uFE0F'};
+  var texts={correct:(who?who+' liegt richtig!':'Richtig!'),wrong:'Leider falsch!',timeout:'Zeit abgelaufen!'};
+  document.getElementById('rico').textContent=icons[type];
+  var rtxt=document.getElementById('rtxt');rtxt.textContent=texts[type];rtxt.className='result-text '+type;
+  // Richtige Antwort immer anzeigen
+  var correctEl=document.getElementById('rcorrect');
+  correctEl.textContent='\u2714 Richtige Antwort: '+q.a[q.r];
+  // Erklaerung immer anzeigen
+  document.getElementById('rexpl').textContent=q.e;
+  // Merktipp (falls vorhanden)
+  var tipEl=document.getElementById('rtip');
+  if(q.tip){tipEl.textContent='\uD83D\uDCA1 '+q.tip;tipEl.style.display='';}
+  else{tipEl.style.display='none';}
+  document.getElementById('result-box').classList.remove('hidden');
+}
+
+function endGame(){
+  document.getElementById('etrophy').textContent=G.s1!==G.s2?'\uD83C\uDFC6':'\uD83E\uDD1D';
+  document.getElementById('etitle').textContent=G.s1>G.s2?'Gewonnen!':G.s2>G.s1?'Gewonnen!':'Unentschieden!';
+  document.getElementById('ewinner').textContent=G.s1>G.s2?G.p1+' gewinnt!':G.s2>G.s1?G.p2+' gewinnt!':'Beide gleich gut!';
+  document.getElementById('en1').textContent=G.p1;document.getElementById('ep1').textContent=G.s1+' Punkte';
+  document.getElementById('en2').textContent=G.p2;document.getElementById('ep2').textContent=G.s2+' Punkte';
+  show('s-end');
+}
+
+function endNextStep(){
+  show('s-after-end');
+}
+
+/* ================================================================
+   ONLINE-LOBBY CLIENT  (HTTP-Polling, kein WebSocket)
+   Kommuniziert mit server.js ueber einfache fetch()-Aufrufe.
+   Polling alle 1.5 Sekunden fuer Echtzeit-Updates.
+================================================================ */
+var OL = {
+  code:     null,
+  playerId: null,
+  myName:   '',
+  oppName:  '',
+  diff:     'mittel',
+  sinceIdx: 0,
+  pollTimer: null
+};
+
+/* Polling stoppen */
+function olStopPoll() {
+  if (OL.pollTimer) { clearInterval(OL.pollTimer); OL.pollTimer = null; }
+}
+
+/* Polling starten - fragt Server alle 1.5s nach neuen Events */
+function olStartPoll() {
+  olStopPoll();
+  OL.pollTimer = setInterval(olPoll, 1500);
+}
+
+/* Einmal pollen */
+function olPoll() {
+  if (!OL.code || !OL.playerId) return;
+  fetch('/api/poll?code=' + OL.code + '&playerId=' + OL.playerId + '&since=' + OL.sinceIdx)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.ok) return;
+      OL.sinceIdx = data.total;
+      data.events.forEach(olHandleEvent);
+    })
+    .catch(function() { /* Netzwerkfehler ignorieren, naechster Poll kommt */ });
+}
+
+/* Server-Event verarbeiten */
+function olHandleEvent(ev) {
+  switch (ev.type) {
+    case 'opp_joined':
+      OL.oppName = ev.opp;
+      document.getElementById('ol-wait-txt').textContent = ev.opp + ' ist beigetreten!';
+      setTimeout(function() {
+        document.getElementById('ol-opp-name').textContent = ev.opp;
+        show('s-ol-ready');
+      }, 800);
+      break;
+
+    case 'opp_progress':
+      olUpdateBar(ev.progress, ev.score);
+      break;
+
+    case 'opp_done':
+      olUpdateBar(10, ev.score);
+      break;
+
+    case 'opp_left':
+      olStopPoll();
+      var active = document.querySelector('.screen.active');
+      if (active && active.id === 's-game') {
+        setTurn('Gegner hat das Spiel verlassen');
+      } else {
+        var wt = document.getElementById('ol-wait-txt');
+        if (wt) wt.textContent = ev.name + ' hat die Lobby verlassen.';
+      }
+      break;
+
+    case 'result':
+      olStopPoll();
+      olShowResult(ev.players);
+      break;
+  }
+}
+
+/* Gegner-Fortschrittsbalken aktualisieren */
+function olUpdateBar(progress, score) {
+  var lbl = document.getElementById('ol-olbl');
+  var bar = document.getElementById('ol-obar');
+  if (lbl) lbl.textContent = OL.oppName + ': ' + progress + '/10 (' + score + ' Pkt.)';
+  if (bar) bar.style.width = Math.min(100, (progress / 10) * 100) + '%';
+}
+
+/* Fehlermeldung anzeigen */
+function olShowErr(elId, txt) {
+  var el = document.getElementById(elId);
+  if (!el) { alert(txt); return; }
+  el.textContent = txt;
+  el.classList.add('on');
+  setTimeout(function() { el.classList.remove('on'); }, 4000);
+}
+
+/* Button waehrend Laden sperren/entsperren */
+function olSetLoading(btnId, loading, label) {
+  var btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Bitte warten...' : label;
+}
+
+/* Screen anzeigen */
+function olShowCreate() {
+  show('s-ol-create');
+  setTimeout(function() {
+    var el = document.getElementById('ol-name-c');
+    if (el) el.focus();
+  }, 80);
+}
+
+function olShowJoin() {
+  show('s-ol-join');
+  /* Nur Ziffern im Code-Feld erlauben */
+  var ci = document.getElementById('ol-code-in');
+  if (ci && !ci._filtered) {
+    ci._filtered = true;
+    ci.addEventListener('input', function() {
+      ci.value = ci.value.replace(/[^0-9]/g, '').slice(0, 4);
+    });
+  }
+  setTimeout(function() { if (ci) ci.focus(); }, 80);
+}
+
+/* Lobby erstellen */
+function olDoCreate() {
+  var name = (document.getElementById('ol-name-c').value.trim() || 'Spieler 1').slice(0, 16);
+  OL.myName = name;
+  OL.diff   = G.diff;
+  olSetLoading('ol-btn-create', true, 'Erstellen');
+
+  fetch('/api/create', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ name: name, diff: G.diff })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    olSetLoading('ol-btn-create', false, 'Erstellen');
+    if (!data.ok) { olShowErr('ol-err-c', 'Fehler beim Erstellen. Bitte erneut versuchen.'); return; }
+    OL.code     = data.code;
+    OL.playerId = data.playerId;
+    OL.diff     = data.diff;
+    OL.sinceIdx = 0;
+    /* Code anzeigen und Polling starten */
+    var shown = document.getElementById('ol-code-shown');
+    if (shown) {
+      shown.textContent = data.code;
+      shown.onclick = function() {
+        navigator.clipboard && navigator.clipboard.writeText(data.code);
+        shown.textContent = 'Kopiert!';
+        setTimeout(function() { shown.textContent = data.code; }, 1500);
+      };
+    }
+    show('s-ol-wait');
+    olStartPoll();
+  })
+  .catch(function() {
+    olSetLoading('ol-btn-create', false, 'Erstellen');
+    olShowErr('ol-err-c', 'Server nicht erreichbar. Ist die App auf Render gestartet?');
+  });
+}
+
+/* Lobby beitreten */
+function olDoJoin() {
+  var code = (document.getElementById('ol-code-in').value || '').replace(/[^0-9]/g, '').slice(0, 4);
+  var name = (document.getElementById('ol-name-j').value.trim() || 'Spieler 2').slice(0, 16);
+  if (code.length !== 4) { olShowErr('ol-err-j', 'Bitte einen 4-stelligen Code eingeben.'); return; }
+  OL.myName = name;
+  olSetLoading('ol-btn-join', true, 'Beitreten');
+
+  fetch('/api/join', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ code: code, name: name })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    olSetLoading('ol-btn-join', false, 'Beitreten');
+    if (!data.ok) {
+      if (data.why === 'notfound') olShowErr('ol-err-j', 'Code nicht gefunden. Bitte pruefen.');
+      else if (data.why === 'full') olShowErr('ol-err-j', 'Diese Lobby ist bereits voll.');
+      else olShowErr('ol-err-j', 'Beitritt fehlgeschlagen.');
+      return;
+    }
+    OL.code     = data.code;
+    OL.playerId = data.playerId;
+    OL.diff     = data.diff;
+    OL.oppName  = data.oppName;
+    OL.sinceIdx = 0;
+    G.diff      = data.diff;
+    document.getElementById('ol-opp-name').textContent = data.oppName;
+    show('s-ol-ready');
+    olStartPoll();
+  })
+  .catch(function() {
+    olSetLoading('ol-btn-join', false, 'Beitreten');
+    olShowErr('ol-err-j', 'Server nicht erreichbar. Ist die App auf Render gestartet?');
+  });
+}
+
+/* Spiel starten (vom Ready-Screen) */
+function olStartGame() {
+  G.mode = 'online';
+  G.p1   = OL.myName;
+  G.p2   = OL.oppName;
+  G.s1   = 0; G.s2 = 0; G.round = 0;
+  var pool = QUESTIONS[OL.diff] || QUESTIONS.mittel;
+  G.qs = shuffle(pool).slice(0, 10);
+  document.getElementById('sn1').textContent = G.p1;
+  document.getElementById('sn2').textContent = G.p2;
+  document.getElementById('sc1').textContent = '0';
+  document.getElementById('sc2').textContent = '0';
+  document.getElementById('bar1').style.width = '0';
+  document.getElementById('bar2').style.width = '0';
+  document.getElementById('result-box').classList.add('hidden');
+  var row = document.getElementById('ol-orow');
+  if (row) {
+    row.style.display = '';
+    document.getElementById('ol-olbl').textContent = OL.oppName + ': 0/10';
+    document.getElementById('ol-obar').style.width = '0%';
+  }
+  show('s-game');
+  nextRound();
+}
+
+/* Fortschritt nach jeder Frage senden */
+function olSendProgress() {
+  if (!OL.code || !OL.playerId) return;
+  fetch('/api/progress', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ code: OL.code, playerId: OL.playerId, progress: G.round, score: G.s1 })
+  }).catch(function() {});
+}
+
+/* Alle Fragen fertig - Ergebnis melden */
+function olDone() {
+  olStopPoll();
+  if (!OL.code || !OL.playerId) return;
+  fetch('/api/done', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ code: OL.code, playerId: OL.playerId, score: G.s1 })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (!data.ok) return;
+    document.getElementById('ol-done-score').textContent = 'Deine Punktzahl: ' + G.s1 + ' Punkte';
+    show('s-ol-done');
+    /* Wieder pollen fuer das finale Ergebnis */
+    olStartPoll();
+  })
+  .catch(function() {
+    document.getElementById('ol-done-score').textContent = 'Deine Punktzahl: ' + G.s1 + ' Punkte';
+    show('s-ol-done');
+    olStartPoll();
+  });
+}
+
+/* Finales Ergebnis anzeigen */
+function olShowResult(players) {
+  olStopPoll();
+  var me  = (players || []).find(function(p) { return p.name === OL.myName; }) || { name: OL.myName, score: G.s1 };
+  var opp = (players || []).find(function(p) { return p.name !== OL.myName; }) || { name: OL.oppName, score: 0 };
+  var won = me.score > opp.score;
+  var tie = me.score === opp.score;
+  document.getElementById('etrophy').textContent  = tie ? '\uD83E\uDD1D' : '\uD83C\uDFC6';
+  document.getElementById('etitle').textContent   = tie ? 'Unentschieden!' : (won ? 'Gewonnen!' : 'Verloren!');
+  document.getElementById('ewinner').textContent  = tie ? 'Beide gleich gut!' : (won ? 'Du gewinnst!' : opp.name + ' gewinnt!');
+  document.getElementById('en1').textContent      = me.name + ' (Du)';
+  document.getElementById('ep1').textContent      = me.score + ' Punkte';
+  document.getElementById('en2').textContent      = opp.name;
+  document.getElementById('ep2').textContent      = opp.score + ' Punkte';
+  show('s-end');
+}
+
+/* Lobby verlassen */
+function olLeave() {
+  olStopPoll();
+  if (OL.code && OL.playerId) {
+    fetch('/api/leave', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ code: OL.code, playerId: OL.playerId })
+    }).catch(function() {});
+  }
+  OL.code = null; OL.playerId = null;
+  var row = document.getElementById('ol-orow');
+  if (row) row.style.display = 'none';
+  show('s-start');
+}
+
+</script>
+</body>
+</html>
